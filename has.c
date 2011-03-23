@@ -47,7 +47,7 @@ void has_free(has_t *e)
             has_free(e->value.array.elements[i]);
         }
         free(e->value.array.elements);
-    } else if(e->type == has_scalar_string && 
+    } else if(e->type == has_string && 
               e->value.string.owner) {
         free(e->value.string.pointer);
     }
@@ -78,7 +78,7 @@ has_t * has_hash_init(has_t *hash, size_t size)
 {
     has_hash_list_t **tmp;
     if(hash == NULL ||
-       (t = calloc(sizeof(has_hash_list_t *), size)) == NULL) {
+       (tmp = calloc(sizeof(has_hash_list_t *), size)) == NULL) {
         return NULL;
     }
 
@@ -333,7 +333,7 @@ has_t * has_string_init(has_t *string, char *pointer, size_t size, bool owner)
         return NULL;
     }
 
-    string->type = has_scalar_string;
+    string->type = has_string;
     string->value.string.pointer = pointer;
     string->value.string.owner = owner;
     string->value.string.size = size;
@@ -373,7 +373,7 @@ has_t * has_int_new(int32_t value)
 has_t * has_int_init(has_t *integer, int32_t value)
 {
     if(integer) {
-        integer->type = has_scalar_string;
+        integer->type = has_string;
         integer->value.integer = value;
     }
     return integer;
@@ -387,7 +387,7 @@ has_t * has_uint_new(uint32_t value)
 has_t * has_uint_init(has_t *integer, uint32_t value)
 {
     if(integer) {
-        integer->type = has_scalar_string;
+        integer->type = has_string;
         integer->value.uint = value;
     }
     return integer;

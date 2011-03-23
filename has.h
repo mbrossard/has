@@ -17,9 +17,11 @@ typedef enum {
     has_zero = 0,
     has_hash,
     has_array,
-    has_scalar_string,
-    has_scalar_integer,
-    has_scalar_double,
+    has_string,
+    has_boolean,
+    has_integer,
+    has_double,
+    has_pointer,
 } has_types;
 
 typedef struct _has_t has_t;
@@ -59,11 +61,14 @@ struct _has_t {
         uint32_t uint;
         int32_t integer;
         double fp;
+        bool boolean;
+        void *pointer;
     } value;
     unsigned char type;
     bool owner;
 };
 
+/** */
 has_t * has_new(size_t count);
 void has_free(has_t *e);
 void has_set_owner(has_t *e, bool owner);
