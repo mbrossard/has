@@ -1,6 +1,9 @@
-CFLAGS = -O2 -g
+CFLAGS = -O2 -g -I.
 
-test: test.c has.c has.h
+all: tests/test_has
+
+tests/test_has: tests/test_has.c has.c has.h
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f *~ test
+	rm -f *~ tests/test_has
