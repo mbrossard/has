@@ -36,7 +36,7 @@ static char *wspaces(int s)
     return spcs;
 }
 
-int has_walk_dump(has_t *cur, has_walk_t place, int index,
+int has_walk_dump(has_t *cur, has_walk_t type, int index,
                   const char *string, size_t size, has_t *element,
                   void *pointer)
 {
@@ -44,31 +44,31 @@ int has_walk_dump(has_t *cur, has_walk_t place, int index,
         return -1;
     }
 
-    if(place == has_walk_hash_begin) {
+    if(type == has_walk_hash_begin) {
         *((int*)pointer) += 1;
         printf("{\n");
-    } else if(place == has_walk_hash_key) {
+    } else if(type == has_walk_hash_key) {
         printf("%skey[%d] = '", wspaces(*((int *)pointer)), index);
         has_dump_string(string, size);
         printf("'\n");
-    } else if(place == has_walk_hash_value_begin) {
+    } else if(type == has_walk_hash_value_begin) {
         printf("%svalue[%d] = ", wspaces(*((int *)pointer)), index);
-    } else if(place == has_walk_hash_end) {
+    } else if(type == has_walk_hash_end) {
         *((int*)pointer) -= 1;
         printf("%s}\n", wspaces(*((int *)pointer)));
-    } else if(place == has_walk_array_begin) {
+    } else if(type == has_walk_array_begin) {
         *((int*)pointer) += 1;
         printf("[\n");
-    } else if(place == has_walk_array_entry_begin) {
+    } else if(type == has_walk_array_entry_begin) {
         printf("%sentry[%d] = ", wspaces(*((int *)pointer)), index);
-    } else if(place == has_walk_array_end) {
+    } else if(type == has_walk_array_end) {
         *((int*)pointer) -= 1;
         printf("%s]\n", wspaces(*((int *)pointer)));
-    } else if(place == has_walk_string) {
+    } else if(type == has_walk_string) {
         printf("\"");
         has_dump_string(string, size);
         printf("\"\n");
-    } else if(place == has_walk_other) {
+    } else if(type == has_walk_other) {
         /* Nothing yet */
     }
 
