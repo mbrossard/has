@@ -434,6 +434,46 @@ has_t * has_uint_init(has_t *integer, uint32_t value)
     return integer;
 }
 
+inline bool has_is_null(has_t *e)
+{
+    return (e && e->type == has_null) ? true : false
+}
+
+inline bool has_is_hash(has_t *e)
+{
+    return (e && e->type == has_hash) ? true : false;
+}
+
+inline bool has_is_array(has_t *e)
+{
+    return (e && e->type == has_array) ? true : false;
+}
+
+inline bool has_is_string(has_t *e)
+{
+    return (e && e->type == has_string) ? true : false;
+}
+
+inline bool has_is_integer(has_t *e)
+{
+    return (e && e->type == has_integer) ? true : false;
+}
+
+inline bool has_is_boolean(has_t *e)
+{
+    return (e && e->type == has_boolean) ? true : false;
+}
+
+inline bool has_is_double(has_t *e)
+{
+    return (e && e->type == has_double) ? true : false;
+}
+
+inline bool has_is_pointer(has_t *e)
+{
+    return (e && e->type == has_pointer) ? true : false;
+}
+
 #define SuperFastHash has_hash_function
 
 /*

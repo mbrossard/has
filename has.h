@@ -17,21 +17,58 @@ extern "C" {
 #endif
 
 /**
+ * @enum has_types
  * @brief List of constants for the different element types
  */
 typedef enum {
-    has_zero = 0,
-    has_hash,
-    has_array,
-    has_string,
-    has_boolean,
-    has_integer,
-    has_double,
-    has_pointer
+    has_null = 0, /** Unitialized       */
+    has_hash,     /** Associative array */
+    has_array,    /** Array             */
+    has_string,   /** String            */
+    has_integer,  /** Integer           */
+    has_boolean,  /** Boolean           */
+    has_double,   /** Floating point    */
+    has_pointer   /** Pointer           */
 } has_types;
 
-/* Forward declarations */
+/**
+ * @enum has_walk_t
+ * @brief List of constant passed to the callback function by
+ * has_walk().
+ */
+typedef enum {
+    /** Called when entering a hash element */
+    has_walk_hash_begin,
+    /** Called for each key of a hash: index, string and pointer
+        passed to callback function */
+    has_walk_hash_key,
+    /** Called for each value of a hash before traversal: index and
+        element passed to callback function */
+    has_walk_hash_value_begin,
+    /** Called for each value of a hash after traversal: index and
+        element passed to callback function */
+    has_walk_hash_value_end,
+    /** Called when leaving a hash element */
+    has_walk_hash_end,
+    /** Called when entering an array element */
+    has_walk_array_begin,
+    /** Called for each entry of an array before traversal: index and
+        element passed to callback function */
+    has_walk_array_entry_begin,
+    /** Called for each entry of an array after traversal: index and
+        element passed to callback function */
+    has_walk_array_entry_end,
+    /** Called when leaving an array element */
+    has_walk_array_end,
+    /** Called for each string: string and pointer passed to callback
+        function */
+    has_walk_string,
+    /** Called for all elements except strings, arrays and hashes:
+        string and pointer passed to callback function */    
+    has_walk_other
+} has_walk_t;
 
+/* Forward declarations */
 /**
  * @struct has_t
  * @brief Main structure
@@ -97,7 +134,21 @@ struct has_hash_list_t {
     bool owner;
 };
 
-    
+/** @typedef has_walk_function_t
+ *  @brief Callback function type for has_walk()
+ *  @see has_walk has_walk_t
+ *  @param [in] cur     Current element
+ *  @param [in] type    Type of callback (see #has_walk_t)
+ *  @param [in] index   Index of the element (if relevant)
+ *  @param [in] string  Pointer to string (if relevant)
+ *  @param [in] size    Size of string (if relevant)
+ *  @param [in] element Pointer to a sub-element (if relevant)
+ *  @param [in] pointer Pointer passed to has_walk()
+ */
+typedef int (*has_walk_function_t)(has_t *cur, has_walk_t type, int index,
+                                   const char *string, size_t size,
+                                   has_t *element, void *pointer);
+
 /**
  * @brief Allocates one or several has_t element(s)
  * @param count
@@ -105,8 +156,25 @@ struct has_hash_list_t {
  */
 has_t * has_new(size_t count);
 
+/**
+ * @brief Frees the content of a has_t structure
+ * @param  e    Pointer to has_t structure
+ * @return void
+ */
 void has_free(has_t *e);
+
+/**
+ * @brief Affect ownership of has_t structure
+ * @param  e     Pointer to has_t structure
+ * @param  owner New value for ownership property
+ * @return void
+ */
 void has_set_owner(has_t *e, bool owner);
+
+/**
+ * @brief Calls callback function during traversal of a has_t structure.
+ */
+int has_walk(has_t *e, has_walk_function_t f, void *p);
 
 has_t * has_hash_new(size_t size);
 has_t * has_hash_init(has_t *hash, size_t size);
@@ -159,8 +227,8 @@ has_t * has_uint_init(has_t *integer, uint32_t value);
 has_t * has_bool_new(bool value);
 has_t * has_bool_init(has_t *boolean, bool value);
 
-has_t * has_null_new();
-has_t * has_null_init(has_t *integer);
+has_t * has_double_new(double value);
+has_t * has_double_init(has_t *fp, double value);
 
 bool has_is_null(has_t *e);
 bool has_is_string(has_t *e);
@@ -170,24 +238,6 @@ bool has_is_hash(has_t *e);
 bool has_is_pointer(has_t *e);
 
 uint32_t has_hash_function(const char * data, int len);
-
-typedef enum {
-    has_walk_hash_begin,
-    has_walk_hash_key,
-    has_walk_hash_value_begin,
-    has_walk_hash_value_end,
-    has_walk_hash_end,
-    has_walk_array_begin,
-    has_walk_array_entry_begin,
-    has_walk_array_entry_end,
-    has_walk_array_end,
-    has_walk_string,
-    has_walk_other
-} has_walk_t;
-
-typedef int (*has_walk_function_t)(has_t *cur, has_walk_t place, int index,
-                                   const char *string, size_t size, has_t *element,
-                                   void *pointer);
 
 #ifdef __cplusplus
 };
