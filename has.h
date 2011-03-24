@@ -113,6 +113,24 @@ has_t * has_int_init(has_t *integer, int32_t value);
 has_t * has_uint_new(uint32_t value);
 has_t * has_uint_init(has_t *integer, uint32_t value);
 
+typedef enum {
+    has_walk_hash_begin,
+    has_walk_hash_key,
+    has_walk_hash_value_begin,
+    has_walk_hash_value_end,
+    has_walk_hash_end,
+    has_walk_array_begin,
+    has_walk_array_entry_begin,
+    has_walk_array_entry_end,
+    has_walk_array_end,
+    has_walk_string,
+    has_walk_other
+} has_walk_t;
+
+typedef int (*has_walk_function_t)(has_t *cur, has_walk_t place, int index,
+                                   const char *string, size_t size, has_t *element,
+                                   void *pointer);
+
 #ifdef __cplusplus
 };
 #endif

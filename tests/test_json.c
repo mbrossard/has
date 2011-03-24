@@ -25,45 +25,59 @@ void has_dump_string(const char *str, size_t l)
     free(s);
  }
 
-void has_dump(has_t *e, int tab) {
-    char spcs[64];
-    int i;
-
-    if(e == NULL) {
-        return;
+static char *wspaces(int s)
+{
+    static char spcs[64];
+    if(s > 31) {
+        s = 31;
     }
-    memset(spcs, ' ', 2 * tab);
-    spcs[2 * tab] = '\0';
+    memset(spcs, ' ', 2 * s);
+    spcs[2 * s] = '\0';
+    return spcs;
+}
 
-    if(e->type == has_hash) {
-        int j = 0;
+int has_walk_dump(has_t *cur, has_walk_t place, int index,
+                  const char *string, size_t size, has_t *element,
+                  void *pointer)
+{
+    if(cur == NULL) {
+        return -1;
+    }
+
+    if(place == has_walk_hash_begin) {
+        *((int*)pointer) += 1;
         printf("{\n");
-        for(i = 0; i < e->value.hash.size; i++) {
-            has_hash_list_t *f;
-            for(f = e->value.hash.elements[i]; f;) {
-                printf("%s  key[%d] = '", spcs, j);
-                has_dump_string(f->key, f->size);
-                printf("'\n");
-                printf("%s  value[%d] = ", spcs, j);
-                has_dump(f->value, tab + 1);
-                f = f->next;
-                j++;
-            }
-        }
-        printf("%s}\n", spcs);
-    } else if(e->type == has_array) {
+    } else if(place == has_walk_hash_key) {
+        printf("%skey[%d] = '", wspaces(*((int *)pointer)), index);
+        has_dump_string(string, size);
+        printf("'\n");
+    } else if(place == has_walk_hash_value_begin) {
+        printf("%svalue[%d] = ", wspaces(*((int *)pointer)), index);
+    } else if(place == has_walk_hash_end) {
+        *((int*)pointer) -= 1;
+        printf("%s}\n", wspaces(*((int *)pointer)));
+    } else if(place == has_walk_array_begin) {
+        *((int*)pointer) += 1;
         printf("[\n");
-        for(i = 0; i < e->value.array.count; i++) {
-            printf("%s  item[%d] = ", spcs, i);
-            has_dump(e->value.array.elements[i], tab + 2);
-        }
-        printf("%s]\n", spcs);
-    } else if(e->type == has_string) {
-                printf("\"");
-                has_dump_string(e->value.string.pointer,
-                                e->value.string.size);
-                printf("\"\n");
+    } else if(place == has_walk_array_entry_begin) {
+        printf("%sentry[%d] = ", wspaces(*((int *)pointer)), index);
+    } else if(place == has_walk_array_end) {
+        *((int*)pointer) -= 1;
+        printf("%s]\n", wspaces(*((int *)pointer)));
+    } else if(place == has_walk_string) {
+        printf("\"");
+        has_dump_string(string, size);
+        printf("\"\n");
+    } else if(place == has_walk_other) {
+        /* Nothing yet */
     }
+
+    return 0;
+}
+
+void has_dump(has_t *e) {
+    int *i = 0;
+    has_walk(e, has_walk_dump, &i);
 }
 
 int main(int argc, char **argv)
@@ -78,7 +92,7 @@ int main(int argc, char **argv)
     has_t *json;
 
     if((json = has_json_parse(buffer))) {
-        has_dump(json, 0);
+        has_dump(json);
         printf("Success\n");
     } else {
         printf("Failure\n");

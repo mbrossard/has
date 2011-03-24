@@ -56,6 +56,47 @@ void has_free(has_t *e)
     }
 }
 
+#define WF(r, call) if((r = (call)) != 0) { return r; } 
+
+int has_walk(has_t *e, has_walk_function_t f, void *p)
+{
+    int i, j, r;
+
+    if(e == NULL) {
+        return -1;
+    }
+
+    if(e->type == has_hash) {
+        WF(r, f(e, has_walk_hash_begin, 0, NULL, 0, NULL, p));
+        for(i = 0, j = 0; i < e->value.hash.size; i++) {
+            has_hash_list_t *l;
+            for(l = e->value.hash.elements[i]; l; l = l->next, j++) {
+                WF(r, f(e, has_walk_hash_key, j, l->key, l->size, NULL, p));
+                WF(r, f(e, has_walk_hash_value_begin, j, NULL, 0, l->value, p));
+                WF(r, has_walk(l->value, f, p));
+                WF(r, f(e, has_walk_hash_value_end, j, NULL, 0, l->value, p));
+            }
+        }
+        WF(r, f(e, has_walk_hash_end, 0, NULL, 0, NULL, p));
+    } else if(e->type == has_array) {
+        WF(r, f(e, has_walk_array_begin, 0, NULL, 0, NULL, p));
+        for(i = 0; i < e->value.array.count; i++) {
+            has_t *cur = e->value.array.elements[i];
+            WF(r, f(e, has_walk_array_entry_begin, i, NULL, 0, cur, p));
+            WF(r, has_walk(cur, f, p));
+            WF(r, f(e, has_walk_array_entry_end, i, NULL, 0, cur, p));
+        }
+        WF(r, f(e, has_walk_array_end, 0, NULL, 0, NULL, p));
+    } else if(e->type == has_string) {
+        WF(r, f(e, has_walk_string, 0, e->value.string.pointer,
+             e->value.string.size, NULL, p));
+    } else {
+        WF(r, f(e, has_walk_other, 0, NULL, 0, NULL, p));
+    }
+    return 0;
+}
+#undef WF
+
 void has_set_owner(has_t *e, bool owner)
 {
     if(e) {
