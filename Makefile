@@ -11,4 +11,5 @@ tests/test_json: tests/test_json.c has.c has.h has_json.c has_json.h
 
 clean:
 	rm -f tests/test_has tests/test_json
-	find . \( -name \*.o -or -name \*~ -or -name \*.dSYM \) -exec rm -rf '{}' ';'
+	find . \( -name \*.o -or -name \*~ \) -delete
+	find . \( -name \*.dSYM  -prune \) -exec rm -rf '{}' ';'
