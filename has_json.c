@@ -11,7 +11,7 @@
 
 static size_t has_json_token_testimator(const char *a, size_t l)
 {
-    size_t i, s;
+    size_t i, s = 0;
     for(i = 0; i < l; i++) {
         char c = a[i];
         if(c == '{' || c == '}' || c == ',' ||
@@ -30,7 +30,7 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
     int i, error = 0;
 
     if (tokens[cur].end < 0 || tokens[cur].start < 0) {
-        return;
+        return NULL;
     }
 
     switch (tokens[cur].type) {

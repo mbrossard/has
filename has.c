@@ -91,7 +91,6 @@ has_t * has_hash_init(has_t *hash, size_t size)
 
 has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner)
 {
-    has_t *r = NULL;
     has_hash_list_t *l, *cur, *prev;
 
     if(hash == NULL || (l = calloc(sizeof(has_hash_list_t), 1)) == NULL) {
@@ -138,7 +137,7 @@ has_t * has_hash_set_str(has_t *hash, char *string, has_t *value)
 
 has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner)
 {
-    has_hash_set_o(hash, string, strlen(string), value, owner);
+    return has_hash_set_o(hash, string, strlen(string), value, owner);
 }
 
 has_t * has_hash_get(has_t *hash, const char *key, size_t size)
@@ -245,7 +244,7 @@ has_t * has_array_init(has_t *array, size_t size)
 has_t * has_array_reallocate(has_t *array, size_t size)
 {
     size_t n;
-    has_t *r = NULL, **new;
+    has_t **new;
 
     if(array == NULL || array->type != has_array) {
         return NULL;
@@ -299,7 +298,6 @@ has_t * has_array_pop(has_t *array)
 
 has_t * has_array_set(has_t *array, size_t index, has_t *value)
 {
-    has_t *r = NULL;
     if(array == NULL || array->type != has_array) {
         return NULL;
     }

@@ -2,9 +2,10 @@
   (c) Mathias Brossard <mathias@brossard.org>
 */
 
-#include "has.h"
+#include "has.c"
+
 #include <stdio.h>
-#include <time.h>
+#include <sys/time.h>
 #include <stdlib.h>
 
 double epoch_double()
@@ -44,4 +45,5 @@ int main(int argc, char **argv)
 
     free(vals);
     free(buffer);
+    return 0;
 }

@@ -2,7 +2,9 @@
   (c) Mathias Brossard <mathias@brossard.org>
 */
 
-#include "has_json.h"
+#include "has.c"
+#include "has_json.c"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +37,7 @@ void has_dump(has_t *e, int tab) {
 
     if(e->type == has_hash) {
         int j = 0;
-        printf("{\n", spcs);
+        printf("{\n");
         for(i = 0; i < e->value.hash.size; i++) {
             has_hash_list_t *f;
             for(f = e->value.hash.elements[i]; f;) {
@@ -50,14 +52,14 @@ void has_dump(has_t *e, int tab) {
         }
         printf("%s}\n", spcs);
     } else if(e->type == has_array) {
-        printf("[\n", spcs);
+        printf("[\n");
         for(i = 0; i < e->value.array.count; i++) {
             printf("%s  item[%d] = ", spcs, i);
             has_dump(e->value.array.elements[i], tab + 2);
         }
         printf("%s]\n", spcs);
     } else if(e->type == has_string) {
-                printf("\"", spcs);
+                printf("\"");
                 has_dump_string(e->value.string.pointer,
                                 e->value.string.size);
                 printf("\"\n");
@@ -83,4 +85,5 @@ int main(int argc, char **argv)
         printf("Failure\n");
     }
     has_free(json);
+    return 0;
 }

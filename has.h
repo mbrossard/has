@@ -21,7 +21,7 @@ typedef enum {
     has_boolean,
     has_integer,
     has_double,
-    has_pointer,
+    has_pointer
 } has_types;
 
 typedef struct _has_t has_t;
