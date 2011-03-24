@@ -1,13 +1,14 @@
 /*
-  (c) Mathias Brossard <mathias@brossard.org>
-*/
+ * Copyright 2011 Mathias Brossard <mathias@brossard.org>
+ */
+/**
+ * @file has.c
+ */
 
 #include "has.h"
 
 #include <stdlib.h>
 #include <string.h>
-
-uint32_t SuperFastHash (const char * data, int len);
 
 has_t * has_new(size_t count)
 {
@@ -56,6 +57,7 @@ void has_free(has_t *e)
     }
 }
 
+/* I don't like to use macros to often */
 #define WF(r, call) if((r = (call)) != 0) { return r; } 
 
 int has_walk(has_t *e, has_walk_function_t f, void *p)
@@ -140,7 +142,7 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
 
     l->key = key;
     l->size = size;
-    l->hash = SuperFastHash(key, size);
+    l->hash = has_hash_function(key, size);
     l->owner = owner;
     l->value = value;
 
@@ -190,7 +192,7 @@ has_t * has_hash_get(has_t *hash, const char *key, size_t size)
         return NULL;
     }
 
-    h = SuperFastHash(key, size);
+    h = has_hash_function(key, size);
     for (cur = hash->value.hash.elements[ h % hash->value.hash.size ];
          cur ; cur = cur->next) {
         if((h == cur->hash) &&                 /* Check hash */
@@ -218,7 +220,7 @@ has_t * has_hash_remove(has_t *hash, const char *key, size_t size)
         return NULL;
     }
 
-    h = SuperFastHash(key, size);
+    h = has_hash_function(key, size);
     prev = &(hash->value.hash.elements[ h % hash->value.hash.size ]);
     for (cur = *prev; cur ; prev = &(cur->next), cur = cur->next) {
         if((h == cur->hash) &&                 /* Check hash */
@@ -432,10 +434,12 @@ has_t * has_uint_init(has_t *integer, uint32_t value)
     return integer;
 }
 
+#define SuperFastHash has_hash_function
+
 /*
-  SuperFastHash by Paul Hsieh : http://www.azillionmonkeys.com/qed/hash.html
-  Public domain version http://burtleburtle.net/bob/hash/doobs.html
-*/
+ * SuperFastHash by Paul Hsieh : http://www.azillionmonkeys.com/qed/hash.html
+ * Public domain version http://burtleburtle.net/bob/hash/doobs.html
+ */
 
 #undef get16bits
 #if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \

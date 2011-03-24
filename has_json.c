@@ -1,3 +1,10 @@
+/*
+ * Copyright 2011 Mathias Brossard <mathias@brossard.org>
+ */
+/**
+ * @file has_json.c
+ */
+
 #include "has_json.h"
 
 #include "jsmn/jsmn.h"
