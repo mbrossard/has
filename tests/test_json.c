@@ -33,7 +33,7 @@ void has_dump(has_t *e, int tab) {
         return;
     }
     memset(spcs, ' ', 2 * tab);
-    spcs[2 * tab + 1] = '\0';
+    spcs[2 * tab] = '\0';
 
     if(e->type == has_hash) {
         int j = 0;
@@ -74,11 +74,10 @@ int main(int argc, char **argv)
         "\"d\": { "
         "\"e\": 1.0,"
         "\"f\": 3.1415"
-        "}";
+        "}}";
+    has_t *json;
 
-    has_t *json = has_json_parse(buffer);
-
-    if(json) {
+    if((json = has_json_parse(buffer))) {
         has_dump(json, 0);
         printf("Success\n");
     } else {
