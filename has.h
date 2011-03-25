@@ -172,12 +172,31 @@ void has_free(has_t *e);
 void has_set_owner(has_t *e, bool owner);
 
 /**
- * @brief Calls callback function during traversal of a has_t structure.
+ * @brief Calls callback function during traversal of a has_t
+ * structure.
  */
 int has_walk(has_t *e, has_walk_function_t f, void *p);
 
+/**
+ * @defgroup hash Associative array functions
+ * @{
+ * @brief Allocates and initializes a hash has_t structure.
+ */
 has_t * has_hash_new(size_t size);
+
+/**
+ * @brief Initializes a hash has_t structure.
+ */
 has_t * has_hash_init(has_t *hash, size_t size);
+
+/**
+ * @brief Tests if a has_t structure is a hash.
+ */
+bool has_is_hash(has_t *e);
+
+/**
+ * @brief Retrieves the number of elements in a hash has_t structure.
+ */
 int has_hash_count(has_t *hash);
 
 has_t * has_hash_set(has_t *hash, char *key, size_t size, has_t *value);
@@ -197,9 +216,29 @@ bool has_hash_delete_str(has_t *hash, const char *string);
 int has_hash_keys(has_t *hash, char **keys, size_t* lengths, int *count);
 int has_hash_keys_values(has_t *hash, char **keys, size_t* lengths,
                          has_t **values, int *count);
+/** @} */
 
+/**
+ * @defgroup array Array functions
+ * @{
+ * @brief Allocates and initializes an array has_t element.
+ */
 has_t * has_array_new(size_t size);
+
+/**
+ * @brief Initializes an array has_t element.
+ */
 has_t * has_array_init(has_t *array, size_t size);
+
+/**
+ * @brief Tests if a has_t element is an array.
+ */
+bool has_is_array(has_t *e);
+
+/**
+ * @brief Retrieves the number of elements in an array has_t
+ * element.
+ */
 int has_array_count(has_t *array);
 
 has_t * has_array_push(has_t *array, has_t *value);
@@ -211,6 +250,14 @@ has_t * has_array_shift(has_t *a);
 has_t * has_array_set(has_t *array, size_t index, has_t *value);
 has_t * has_array_get(has_t *array, size_t index);
 
+/** @} */
+
+/**
+ * @defgroup string String functions
+ * Function related to string has_t elements.
+ * @{
+ * @brief Allocates and initializes a string has_t element.
+ */
 has_t * has_string_new(char *pointer, size_t size);
 has_t * has_string_new_o(char *pointer, size_t size, bool owner);
 has_t * has_string_new_str(char *string);
@@ -219,22 +266,44 @@ has_t * has_string_new_str_o(char *string, bool owner);
 has_t * has_string_init(has_t *string, char *pointer, size_t size, bool owner);
 has_t * has_string_init_str(has_t *string, char *str, bool owner);
 
+/**
+ * @brief Tests if a has_t element is a string.
+ */
+bool has_is_string(has_t *e);
+
+/** @} */
+
+has_t * has_null_new();
+has_t * has_null_init(has_t *null);
+bool has_is_null(has_t *e);
+
 has_t * has_int_new(int32_t value);
 has_t * has_int_init(has_t *integer, int32_t value);
-has_t * has_uint_new(uint32_t value);
-has_t * has_uint_init(has_t *integer, uint32_t value);
+
+/**
+ * @brief Tests if a has_t element is an integer.
+ */
+bool has_is_int(has_t *e);
+int32_t has_int_get(has_t *integer);
 
 has_t * has_bool_new(bool value);
 has_t * has_bool_init(has_t *boolean, bool value);
 
+/**
+ * @brief Tests if a has_t element is a boolean.
+ */
+bool has_is_boolean(has_t *e);
+bool has_bool_get(has_t *boolean);
+
 has_t * has_double_new(double value);
 has_t * has_double_init(has_t *fp, double value);
 
-bool has_is_null(has_t *e);
-bool has_is_string(has_t *e);
-bool has_is_int(has_t *e);
-bool has_is_array(has_t *e);
-bool has_is_hash(has_t *e);
+/**
+ * @brief Tests if a has_t element is a double.
+ */
+bool has_is_double(has_t *e);
+double has_double_get(has_t *fp);
+
 bool has_is_pointer(has_t *e);
 
 uint32_t has_hash_function(const char * data, int len);

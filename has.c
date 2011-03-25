@@ -57,6 +57,13 @@ void has_free(has_t *e)
     }
 }
 
+void has_set_owner(has_t *e, bool owner)
+{
+    if(e) {
+        e->owner = owner ? 1 : 0;
+    }
+}
+
 /* I don't like to use macros to often */
 #define WF(r, call) if((r = (call)) != 0) { return r; } 
 
@@ -98,13 +105,6 @@ int has_walk(has_t *e, has_walk_function_t f, void *p)
     return 0;
 }
 #undef WF
-
-void has_set_owner(has_t *e, bool owner)
-{
-    if(e) {
-        e->owner = owner ? 1 : 0;
-    }
-}
 
 has_t * has_hash_new(size_t size)
 {
@@ -406,6 +406,24 @@ has_t * has_string_new_str_o(char *str, bool owner)
     return has_string_init(has_new(1), str, strlen(str), owner);
 }
 
+has_t * has_null_new(int32_t value)
+{
+    return has_null_init(has_new(1));
+}
+
+has_t * has_null_init(has_t *null)
+{
+    if(null) {
+        null->type = has_null;
+    }
+    return null;
+}
+
+inline bool has_is_null(has_t *e)
+{
+    return (e && e->type == has_null) ? true : false;
+}
+
 has_t * has_int_new(int32_t value)
 {
     return has_int_init(has_new(1), value);
@@ -414,29 +432,57 @@ has_t * has_int_new(int32_t value)
 has_t * has_int_init(has_t *integer, int32_t value)
 {
     if(integer) {
-        integer->type = has_string;
+        integer->type = has_integer;
         integer->value.integer = value;
     }
     return integer;
 }
 
-has_t * has_uint_new(uint32_t value)
+int32_t has_int_get(has_t *integer)
 {
-    return has_uint_init(has_new(1), value);
+    return (integer && integer->type == has_integer) ?  
+        integer->value.integer : 0;
 }
 
-has_t * has_uint_init(has_t *integer, uint32_t value)
+has_t * has_bool_new(bool value)
 {
-    if(integer) {
-        integer->type = has_string;
-        integer->value.uint = value;
+    return has_bool_init(has_new(1), value);
+}
+
+has_t * has_bool_init(has_t *boolean, bool value)
+{
+    if(boolean) {
+        boolean->type = has_boolean;
+        boolean->value.boolean = value;
     }
-    return integer;
+    return boolean;
 }
 
-inline bool has_is_null(has_t *e)
+bool has_bool_get(has_t *boolean)
 {
-    return (e && e->type == has_null) ? true : false;
+    return (boolean && boolean->type == has_boolean) ?  
+        boolean->value.boolean : 0;
+}
+
+
+has_t * has_double_new(double value)
+{
+    return has_double_init(has_new(1), value);
+}
+
+has_t * has_double_init(has_t *fp, double value)
+{
+    if(fp) {
+        fp->type = has_double;
+        fp->value.fp = value;
+    }
+    return fp;
+}
+
+double has_double_get(has_t *fp)
+{
+    return (fp && fp->type == has_double) ?  
+        fp->value.fp : 0.0;
 }
 
 inline bool has_is_hash(has_t *e)
