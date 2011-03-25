@@ -436,7 +436,7 @@ has_t * has_uint_init(has_t *integer, uint32_t value)
 
 inline bool has_is_null(has_t *e)
 {
-    return (e && e->type == has_null) ? true : false
+    return (e && e->type == has_null) ? true : false;
 }
 
 inline bool has_is_hash(has_t *e)
