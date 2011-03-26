@@ -132,6 +132,11 @@ has_t * has_hash_init(has_t *hash, size_t size)
     return hash;
 }
 
+inline bool has_is_hash(has_t *e)
+{
+    return (e && e->type == has_hash) ? true : false;
+}
+
 has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner)
 {
     has_hash_list_t *l, *cur, *prev;
@@ -181,6 +186,33 @@ has_t * has_hash_set_str(has_t *hash, char *string, has_t *value)
 has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner)
 {
     return has_hash_set_o(hash, string, strlen(string), value, owner);
+}
+
+bool has_hash_exists(has_t *hash, const char *key, size_t size)
+{
+    has_hash_list_t *cur;
+    bool r = false;
+    uint32_t h;
+    if(hash == NULL) {
+        return NULL;
+    }
+
+    h = has_hash_function(key, size);
+    for (cur = hash->value.hash.elements[ h % hash->value.hash.size ];
+         cur ; cur = cur->next) {
+        if((h == cur->hash) &&                 /* Check hash */
+           (size == cur->size) &&              /* Check key size */
+           memcmp(key, cur->key, size) == 0) { /* Compare keys */
+            r = true;                          /* Found match */
+            break;
+        }
+    }
+    return r;
+}
+
+bool has_hash_exists_str(has_t *hash, const char *string)
+{
+    return has_hash_exists(hash, string, strlen(string));
 }
 
 has_t * has_hash_get(has_t *hash, const char *key, size_t size)
@@ -359,7 +391,8 @@ has_t * has_array_set(has_t *array, size_t index, has_t *value)
 
 has_t * has_array_get(has_t *array, size_t index)
 {
-    return (array && array->type == has_array && array->value.array.count > index) ?
+    return (array && array->type == has_array &&
+            array->value.array.count > index) ?
         array->value.array.elements[index] : NULL;
 }
 
@@ -406,6 +439,11 @@ has_t * has_string_new_str_o(char *str, bool owner)
     return has_string_init(has_new(1), str, strlen(str), owner);
 }
 
+inline bool has_is_string(has_t *e)
+{
+    return (e && e->type == has_string) ? true : false;
+}
+
 has_t * has_null_new(int32_t value)
 {
     return has_null_init(has_new(1));
@@ -436,6 +474,11 @@ has_t * has_int_init(has_t *integer, int32_t value)
         integer->value.integer = value;
     }
     return integer;
+}
+
+inline bool has_is_int(has_t *e)
+{
+    return (e && e->type == has_integer) ? true : false;
 }
 
 int32_t has_int_get(has_t *integer)
@@ -485,24 +528,9 @@ double has_double_get(has_t *fp)
         fp->value.fp : 0.0;
 }
 
-inline bool has_is_hash(has_t *e)
-{
-    return (e && e->type == has_hash) ? true : false;
-}
-
 inline bool has_is_array(has_t *e)
 {
     return (e && e->type == has_array) ? true : false;
-}
-
-inline bool has_is_string(has_t *e)
-{
-    return (e && e->type == has_string) ? true : false;
-}
-
-inline bool has_is_integer(has_t *e)
-{
-    return (e && e->type == has_integer) ? true : false;
 }
 
 inline bool has_is_boolean(has_t *e)

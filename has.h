@@ -180,6 +180,9 @@ int has_walk(has_t *e, has_walk_function_t f, void *p);
 /**
  * @defgroup hash Associative array functions
  * @{
+ */
+
+/**
  * @brief Allocates and initializes a hash has_t structure.
  */
 has_t * has_hash_new(size_t size);
@@ -199,18 +202,103 @@ bool has_is_hash(has_t *e);
  */
 int has_hash_count(has_t *hash);
 
+/**
+ * @brief Adds an element to hash.
+ * @param [in] hash  Pointer to hash has_t element to which add the value.
+ * @param [in] key   Pointer to the key.
+ * @param [in] size  Size of the key.
+ * @param [in] value Pointer to has_t element containing the value.
+ * @return hash if successful or NULL if has is not defined, is not a
+ * hash, or if memory allocation failed.
+ */
 has_t * has_hash_set(has_t *hash, char *key, size_t size, has_t *value);
+
+/**
+ * @brief Adds an element to hash with key ownership
+ * @param [in] hash  Pointer to hash has_t element to which add the value.
+ * @param [in] key   Pointer to the key.
+ * @param [in] size  Size of the key.
+ * @param [in] value Pointer to has_t element containing the value.
+ * @param [in] owner Boolean value specifying the ownership of the key.
+ * @return hash if successful or NULL if has is not defined, is not a
+ * hash, or if memory allocation failed.
+ */
 has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner);
+
+/**
+ * @brief Adds an element to hash with key as string
+ * @param [in] hash   Pointer to hash has_t element to which add the value.
+ * @param [in] string Pointer to NULL-terminated string to be used as key
+ * @param [in] value  Pointer to has_t element containing the value.
+ * @return hash if successful or NULL if has is not defined, is not a
+ * hash, or if memory allocation failed.
+ */
 has_t * has_hash_set_str(has_t *hash, char *string, has_t *value);
+
+/**
+ * @brief Adds an element to hash with key as string and ownership
+ * @param [in] hash   Pointer to hash has_t element to which add the value.
+ * @param [in] string Pointer to NULL-terminated string to be used as key
+ * @param [in] value  Pointer to has_t element containing the value.
+ * @param [in] owner  Boolean value specifying the ownership of the key.
+ * @return hash if successful or NULL if has is not defined, is not a
+ * hash, or if memory allocation failed.
+ */
 has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner);
 
+/**
+ * @brief Determines if an entry with matching key exists in hash.
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] key   Pointer to the key.
+ * @param [in] size  Size of the key.
+ * @return true if the key exists in hash element, false if not found
+ * or if hash is NULL or not a has_hash element.
+ */
+bool has_hash_exists(has_t *hash, const char *key, size_t size);
+
+/**
+ * @brief Determines if an entry with matching key (passed as string)
+ * exists in hash.
+ * @param [in] hash   Pointer to hash has_t element to test.
+ * @param [in] string Pointer to NULL-terminated string containing the key.
+ * @return true if the key exists in hash element, false if not found
+ * or if hash is NULL or not a has_hash element.
+ */
+bool has_hash_exists_str(has_t *hash, const char *string);
+
+/**
+ * @brief Retrieves an entry from hash from its key.
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] key   Pointer to the key.
+ * @param [in] size  Size of the key.
+ * @return the value corresponding to the key, NULL if not found or if
+ * hash is NULL or not a has_hash element.
+ */
 has_t * has_hash_get(has_t *hash, const char *key, size_t size);
+
+/**
+ * @brief Retrieves an entry from hash from its key (passed as string).
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] string Pointer to NULL-terminated string containing the key.
+ * @return the value corresponding to the key, NULL if not found or if
+ * hash is NULL or not a has_hash element.
+ */
 has_t * has_hash_get_str(has_t *hash, const char *string);
 
+/**
+ */
 has_t * has_hash_remove(has_t *hash, const char *key, size_t size);
+
+/**
+ */
 has_t * has_hash_remove_str(has_t *hash, const char *string);
 
+/**
+ */
 bool has_hash_delete(has_t *hash, const char *key, size_t size);
+
+/**
+ */
 bool has_hash_delete_str(has_t *hash, const char *string);
 
 int has_hash_keys(has_t *hash, char **keys, size_t* lengths, int *count);
@@ -221,6 +309,9 @@ int has_hash_keys_values(has_t *hash, char **keys, size_t* lengths,
 /**
  * @defgroup array Array functions
  * @{
+ */
+
+/**
  * @brief Allocates and initializes an array has_t element.
  */
 has_t * has_array_new(size_t size);
@@ -241,13 +332,34 @@ bool has_is_array(has_t *e);
  */
 int has_array_count(has_t *array);
 
+/**
+ *
+ */
 has_t * has_array_push(has_t *array, has_t *value);
+
+/**
+ *
+ */
 has_t * has_array_pop(has_t *a);
 
+/**
+ *
+ */
 has_t * has_array_unshift(has_t *array, has_t *value);
+
+/**
+ *
+ */
 has_t * has_array_shift(has_t *a);
 
+/**
+ *
+ */
 has_t * has_array_set(has_t *array, size_t index, has_t *value);
+
+/**
+ *
+ */
 has_t * has_array_get(has_t *array, size_t index);
 
 /** @} */
@@ -256,6 +368,9 @@ has_t * has_array_get(has_t *array, size_t index);
  * @defgroup string String functions
  * Function related to string has_t elements.
  * @{
+ */
+
+/**
  * @brief Allocates and initializes a string has_t element.
  */
 has_t * has_string_new(char *pointer, size_t size);
@@ -273,29 +388,65 @@ bool has_is_string(has_t *e);
 
 /** @} */
 
+/**
+ * @brief Allocates and initializes a null has_t element.
+ */
 has_t * has_null_new();
+
+/**
+ * @brief Initializes a null has_t element.
+ */
 has_t * has_null_init(has_t *null);
+
+/**
+ * @brief Tests if a has_t element is a null.
+ */
 bool has_is_null(has_t *e);
 
+/**
+ * @brief Allocates and initializes an integer has_t element.
+ */
 has_t * has_int_new(int32_t value);
+
+/**
+ * @brief Initializes an integer has_t element.
+ */
 has_t * has_int_init(has_t *integer, int32_t value);
 
 /**
  * @brief Tests if a has_t element is an integer.
  */
 bool has_is_int(has_t *e);
+
+/* FIXME */
 int32_t has_int_get(has_t *integer);
 
+/**
+ * @brief Allocates and initializes a boolean has_t element.
+ */
 has_t * has_bool_new(bool value);
+
+/**
+ * @brief Initializes a boolean has_t element.
+ */
 has_t * has_bool_init(has_t *boolean, bool value);
 
 /**
  * @brief Tests if a has_t element is a boolean.
  */
 bool has_is_boolean(has_t *e);
+
+/* FIXME */
 bool has_bool_get(has_t *boolean);
 
+/**
+ * @brief Allocates and initializes a double has_t element.
+ */
 has_t * has_double_new(double value);
+
+/**
+ * @brief Initializes a double has_t element.
+ */
 has_t * has_double_init(has_t *fp, double value);
 
 /**
@@ -303,6 +454,16 @@ has_t * has_double_init(has_t *fp, double value);
  */
 bool has_is_double(has_t *e);
 double has_double_get(has_t *fp);
+
+/**
+ * @brief Allocates and initializes a pointer has_t element.
+ */
+has_t * has_pointer_new(void *value);
+
+/**
+ * @brief Initializes a pointer has_t element.
+ */
+has_t * has_pointer_init(has_t *pointer, void *value);
 
 bool has_is_pointer(has_t *e);
 
