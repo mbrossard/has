@@ -134,16 +134,17 @@ struct has_hash_list_t {
     bool owner;
 };
 
-/** @typedef has_walk_function_t
- *  @brief Callback function type for has_walk()
- *  @see has_walk has_walk_t
- *  @param [in] cur     Current element
- *  @param [in] type    Type of callback (see #has_walk_t)
- *  @param [in] index   Index of the element (if relevant)
- *  @param [in] string  Pointer to string (if relevant)
- *  @param [in] size    Size of string (if relevant)
- *  @param [in] element Pointer to a sub-element (if relevant)
- *  @param [in] pointer Pointer passed to has_walk()
+/**
+ * @typedef has_walk_function_t
+ * @brief Callback function type for has_walk()
+ * @see has_walk has_walk_t
+ * @param [in] cur     Current element
+ * @param [in] type    Type of callback (see #has_walk_t)
+ * @param [in] index   Index of the element (if relevant)
+ * @param [in] string  Pointer to string (if relevant)
+ * @param [in] size    Size of string (if relevant)
+ * @param [in] element Pointer to a sub-element (if relevant)
+ * @param [in] pointer Pointer passed to has_walk()
  */
 typedef int (*has_walk_function_t)(has_t *cur, has_walk_t type, int index,
                                    const char *string, size_t size,
@@ -204,11 +205,12 @@ int has_hash_count(has_t *hash);
 
 /**
  * @brief Adds an element to hash.
- * @param [in] hash  Pointer to hash has_t element to which add the value.
+ * @param [in] hash Pointer to hash has_t element to which add the
+ * value.
  * @param [in] key   Pointer to the key.
  * @param [in] size  Size of the key.
  * @param [in] value Pointer to has_t element containing the value.
- * @return hash if successful or NULL if has is not defined, is not a
+ * @return hash if successful or @c NULL if has is not defined, is not a
  * hash, or if memory allocation failed.
  */
 has_t * has_hash_set(has_t *hash, char *key, size_t size, has_t *value);
@@ -220,17 +222,19 @@ has_t * has_hash_set(has_t *hash, char *key, size_t size, has_t *value);
  * @param [in] size  Size of the key.
  * @param [in] value Pointer to has_t element containing the value.
  * @param [in] owner Boolean value specifying the ownership of the key.
- * @return hash if successful or NULL if has is not defined, is not a
+ * @return hash if successful or @c NULL if has is not defined, is not a
  * hash, or if memory allocation failed.
  */
-has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner);
+has_t * has_hash_set_o(has_t *hash, char *key, size_t size,
+                       has_t *value, bool owner);
 
 /**
  * @brief Adds an element to hash with key as string
  * @param [in] hash   Pointer to hash has_t element to which add the value.
- * @param [in] string Pointer to NULL-terminated string to be used as key
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string to be
+ * used as key
  * @param [in] value  Pointer to has_t element containing the value.
- * @return hash if successful or NULL if has is not defined, is not a
+ * @return hash if successful or @c NULL if has is not defined, is not a
  * hash, or if memory allocation failed.
  */
 has_t * has_hash_set_str(has_t *hash, char *string, has_t *value);
@@ -238,13 +242,15 @@ has_t * has_hash_set_str(has_t *hash, char *string, has_t *value);
 /**
  * @brief Adds an element to hash with key as string and ownership
  * @param [in] hash   Pointer to hash has_t element to which add the value.
- * @param [in] string Pointer to NULL-terminated string to be used as key
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string to be
+ * used as key
  * @param [in] value  Pointer to has_t element containing the value.
  * @param [in] owner  Boolean value specifying the ownership of the key.
- * @return hash if successful or NULL if has is not defined, is not a
+ * @return hash if successful or @c NULL if has is not defined, is not a
  * hash, or if memory allocation failed.
  */
-has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner);
+has_t * has_hash_set_str_o(has_t *hash, char *string,
+                           has_t *value, bool owner);
 
 /**
  * @brief Determines if an entry with matching key exists in hash.
@@ -252,7 +258,7 @@ has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner);
  * @param [in] key   Pointer to the key.
  * @param [in] size  Size of the key.
  * @return true if the key exists in hash element, false if not found
- * or if hash is NULL or not a has_hash element.
+ * or if hash is @c NULL or not a has_hash element.
  */
 bool has_hash_exists(has_t *hash, const char *key, size_t size);
 
@@ -260,9 +266,10 @@ bool has_hash_exists(has_t *hash, const char *key, size_t size);
  * @brief Determines if an entry with matching key (passed as string)
  * exists in hash.
  * @param [in] hash   Pointer to hash has_t element to test.
- * @param [in] string Pointer to NULL-terminated string containing the key.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
  * @return true if the key exists in hash element, false if not found
- * or if hash is NULL or not a has_hash element.
+ * or if hash is @c NULL or not a has_hash element.
  */
 bool has_hash_exists_str(has_t *hash, const char *string);
 
@@ -271,17 +278,18 @@ bool has_hash_exists_str(has_t *hash, const char *string);
  * @param [in] hash  Pointer to hash has_t element to test.
  * @param [in] key   Pointer to the key.
  * @param [in] size  Size of the key.
- * @return the value corresponding to the key, NULL if not found or if
- * hash is NULL or not a has_hash element.
+ * @return the value corresponding to the key, @c NULL if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 has_t * has_hash_get(has_t *hash, const char *key, size_t size);
 
 /**
  * @brief Retrieves an entry from hash from its key (passed as string).
  * @param [in] hash  Pointer to hash has_t element to test.
- * @param [in] string Pointer to NULL-terminated string containing the key.
- * @return the value corresponding to the key, NULL if not found or if
- * hash is NULL or not a has_hash element.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
+ * @return the value corresponding to the key, @c NULL if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 has_t * has_hash_get_str(has_t *hash, const char *string);
 
