@@ -253,6 +253,19 @@ has_t * has_hash_set_str_o(has_t *hash, char *string,
                            has_t *value, bool owner);
 
 /**
+ * @brief Adds an element to hash.
+ * @param [in] hash Pointer to hash has_t element to which add the
+ * value.
+ * @param [in] key   Pointer to has_t element containing the key.
+ * @param [in] value Pointer to has_t element containing the value.
+ * @return hash if successful or @c NULL if has is not defined, is not a
+ * hash, or if memory allocation failed.
+ *
+ * The key has_t element will be freed.
+ */
+has_t * has_hash_add(has_t *hash, has_t *key, has_t *value);
+
+/**
  * @brief Determines if an entry with matching key exists in hash.
  * @param [in] hash  Pointer to hash has_t element to test.
  * @param [in] key   Pointer to the key.

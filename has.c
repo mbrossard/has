@@ -188,6 +188,20 @@ has_t * has_hash_set_str_o(has_t *hash, char *string, has_t *value, bool owner)
     return has_hash_set_o(hash, string, strlen(string), value, owner);
 }
 
+has_t *has_hash_add(has_t *h, has_t *k, has_t *v)
+{
+    char *s = k->value.string.pointer;
+    size_t l = k->value.string.size;
+    bool owner = k->value.string.owner;
+
+    if(owner) {
+        k->value.string.owner = false;
+    }
+    has_free(k);
+
+    return has_hash_set_o(h, s, l, v, owner);
+}
+
 bool has_hash_exists(has_t *hash, const char *key, size_t size)
 {
     has_hash_list_t *cur;
