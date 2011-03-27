@@ -14,17 +14,24 @@
 extern "C" {
 #endif
 
-/*
+/**
  * @brief Parses JSON-encoded text into a has_t structure
- * @param buffer NULL-terminated text
- * @return A pointer to a has_t structure or NULL in case of failure.
+ * @param buffer <tt>NULL</tt>-terminated text
+ * @param decode Decode strings
+ * @return A pointer to a has_t structure or @c NULL in case of failure.
  *
  * The input string must be a valid UTF-8 encoded string. The strings
- * in the resulting has_t structure will not be decoded.
+ * in the resulting has_t structure will be decoded (unescape).
  */
-has_t *has_json_parse(const char *buffer);
+has_t *has_json_parse(const char *buffer, bool decode);
 
-int has_json_serialize(has_t *input, char **output, size_t *size);
+/**
+ * @brief Serializes a has_t structure into JSON text
+ * @param buffer <tt>NULL</tt>-terminated text
+ * @return A pointer to a has_t structure or @c NULL in case of failure.
+ *
+ */
+int has_json_serialize(has_t *input, char **output, size_t *size, int encode);
 
 #ifdef __cplusplus
 };

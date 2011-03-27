@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         "}}";
     has_t *json;
 
-    if((json = has_json_parse(buffer))) {
+    if((json = has_json_parse(buffer, false))) {
         has_dump(json);
         printf("Success\n");
     } else {

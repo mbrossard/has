@@ -29,7 +29,7 @@ static size_t has_json_token_testimator(const char *a, size_t l)
     return s / 2;
 }
 
-int32_t encode_utf8(int32_t codepoint, char *output)
+int encode_utf8(int32_t codepoint, char *output)
 {
     int i = 0;
 
@@ -76,8 +76,146 @@ int32_t encode_utf8(int32_t codepoint, char *output)
     return i;
 }
 
+unsigned int decode_4hex(const char * hex)
+{
+    unsigned int i, r = 0;
+
+    for (i = 0 ; i < 4 ; i++) {
+        unsigned char c = hex[i];
+
+        if ((c >= '0') && (c <= '9')) c -= '0';
+        else if ((c >= 'A') && (c <= 'F')) c -= 'A';
+        else if ((c >= 'a') && (c <= 'a')) c -= 'a';
+        if(c & 0xF0) return 0xFFFFFFFF;
+        r = (r << 4) | c;
+    }
+    return r;
+}
+
+int has_json_decode_unicode(char *input, unsigned int length,
+                            unsigned int *codepoint)
+{
+    unsigned int point, read = 4;
+    if(input == NULL || codepoint == NULL ||
+       (length < 4) || (point = decode_4hex(input)) == 0xFFFFFFFF) {
+        return -1;
+    }
+
+    if ((point & 0xFC00) == 0xD800) {
+        /* It's a surrogate pair */
+        if(length < 10) { /* Do we have enough bytes remaining */
+            return -1;
+        }
+        if (input[5] == '\\' && input[6] == 'u') {
+            /* Low surrogate */
+            unsigned int surrogate;
+            if((surrogate = decode_4hex(input + 7)) == 0xFFFFFFFF) {
+                return -1;
+            }
+            read += 6;
+            if((point & 0xFC00) != 0xDC00) {
+                /* Fail ? */
+            }
+            point = 0x10000 +
+                (((point & 0x3FF) << 10) | (surrogate & 0x3FF));
+        } else {
+            return -1;
+        }
+    }
+    *codepoint = point;
+    return read;
+}
+
+int has_json_string_decode(char *input, size_t length,
+                           char **output, size_t *newlen)
+{
+    size_t processed = 0, written = 0;
+    char *n = NULL;
+    int i, j;
+
+    if(output == NULL || newlen == NULL) {
+        return -1;
+    }
+
+    /* Find first reverse solidus */
+    for(i = 0; input[i] != '\\' && i < length; i++) /* Nothing */ ;
+
+    /* String doesn't require decoding */
+    if(i == length) {
+        *output = NULL;
+        *newlen = length;
+        return 0;
+    }
+
+    n = malloc(length);
+    while(processed < length) {
+        for(i = processed; input[i] != '\\' && i < length; i++) /* Nothing */ ;
+        if(i == length) {
+            j = length - processed;
+        } else {
+            j = i - processed - 1;
+        }
+        memcpy(n + written, input + processed, j);
+        processed += j;
+        written += j;
+        if(processed < length && input[processed] == '\\') {
+            char *add = NULL, c = input[processed + 1];
+            if(c == '"') add = "\"";
+            else if(c == '\\') add = "\\";
+            else if(c == 'b') add = "\b";
+            else if(c == 'f') add = "\f";
+            else if(c == 'n') add = "\n";
+            else if(c == 'r') add = "\r";
+            else if(c == 't') add = "\t";
+            else if(c == 'u') {
+                unsigned int point;
+                processed += 2;
+                if((j = has_json_decode_unicode
+                    (input + processed, length - processed, &point)) - 1) {
+                    /* FIXME: Fail */
+                } else {
+                    processed += j;
+                }
+
+                if((j = encode_utf8(point, n + written)) == -1) {
+                    /* FIXME: Fail */
+                } else {
+                    written += j;
+                }
+            } else {
+                /* FIXME: Fail */
+            }
+            if(add) {
+                processed += 2;
+                n[written++] = add[0];
+            }
+        }
+    }
+
+    *output = n;
+    *newlen = written;
+
+    return 0;
+}
+
+has_t *has_json_build_string(char *ptr, size_t len, bool decode)
+{
+    char *s;
+    size_t l;
+
+    if(!decode) {
+        return has_string_new(ptr, len);
+    }
+
+    if(has_json_string_decode(ptr, len, &s, &l) < 0) {
+        return NULL;
+    }
+    return (s == NULL) ? has_string_new(ptr, len) :
+        has_string_new_o(s, l, true);
+}
+
 static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
-                             const char *buffer, size_t *consumed)
+                             const char *buffer, size_t *processed, bool decode)
 {
     has_t *r = NULL;
     size_t count = 0;
@@ -89,21 +227,22 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
 
     switch (tokens[cur].type) {
         case JSMN_PRIMITIVE:
+            /* FIXME: parse string */
             r = has_string_new((char *) buffer + tokens[cur].start,
                                tokens[cur].end - tokens[cur].start);
-            /* TODO */
             count++;
             break;
         case JSMN_STRING:
-            r = has_string_new((char *) buffer + tokens[cur].start,
-                               tokens[cur].end - tokens[cur].start);
+            has_json_build_string((char *) buffer + tokens[cur].start,
+                                  tokens[cur].end - tokens[cur].start, decode);
             count++;
             break;
         case JSMN_ARRAY:
             r = has_array_new(tokens[cur].size);
             count++;
             for(i = 0; i < tokens[cur].size; i++) {
-                has_t *e = has_json_build(tokens, cur + count, max, buffer, &count);
+                has_t *e = has_json_build(tokens, cur + count, max,
+                                          buffer, &count, decode);
                 if(e) {
                     has_array_push(r, e);
                 } else {
@@ -116,22 +255,21 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
             r = has_hash_new(tokens[cur].size);
             count++;
             for(i = 0; i < tokens[cur].size; i+= 2) {
-                has_t *k = has_json_build(tokens, cur + count, max, buffer, &count);
+                has_t *k = has_json_build(tokens, cur + count, max,
+                                          buffer, &count, decode);
                 if(k) {
-                    if(k->type == has_string) {
-                        has_t *v = has_json_build(tokens, cur + count, max, buffer, &count);
-                        has_hash_set(r, k->value.string.pointer, k->value.string.size, v);
-                    }
-                    has_free(k);
+                    has_t *v = has_json_build(tokens, cur + count, max,
+                                              buffer, &count, decode);
+                    has_hash_add(r, k, v);
                 }
             }
             break;
         default:
-            break;
             /* Unknown type */
+            break;
     }
-    if(consumed && count > 0) {
-        *consumed += count;
+    if(processed && count > 0) {
+        *processed += count;
     }
 
     if(error && r) {
@@ -141,7 +279,7 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
     return r;
 }
 
-has_t *has_json_parse(const char *buffer)
+has_t *has_json_parse(const char *buffer, bool decode)
 {
     jsmn_parser parser;
     jsmntok_t *tokens;
@@ -160,7 +298,7 @@ has_t *has_json_parse(const char *buffer)
         return NULL;
     }
 
-    r = has_json_build(tokens, 0, max_tokens, buffer, NULL);
+    r = has_json_build(tokens, 0, max_tokens, buffer, NULL, decode);
     free(tokens);
     return r;
 }
@@ -229,7 +367,43 @@ typedef struct {
 int has_json_serializer_buffer_outputter(has_json_serializer_t *s,
                                          const char *value, size_t size)
 {
+    has_json_serializer_buffer_t *b;
+
+    if(s == NULL) {
+        return -1;
+    }
+    b = s->pointer;
+    if(size > b->size - b->current) {
+        /* Handle resizing */
+        return -1;
+    }
+
+    memcpy(b->buffer + b->current, value, size);
+    b->current += size;
+
     return 0;
+}
+
+int has_json_string_encode(has_json_serializer_t *s,
+                           const char *input, size_t length)
+{
+    return (s->outputter(s->pointer, input, length));
+    /*
+    for(i = 0; i < length; i++) {
+        char c = input[i];
+
+        switch(c) {
+        case '\\':
+        case '\b':
+        case '\f':
+        case '\n':
+        case '\r':
+        case '\t':
+
+        default:
+        }
+    }
+    */
 }
 
 int has_json_serialize_string(has_json_serializer_t *s,
@@ -238,10 +412,16 @@ int has_json_serialize_string(has_json_serializer_t *s,
     if(s == NULL || s->outputter == NULL) {
         return -1;
     }
-    
-    return (((s->outputter)(s->pointer, "\"", 1) == 0) &&
-            ((s->outputter)(s->pointer, value, size) == 0) &&
-            ((s->outputter)(s->pointer, "\"", 1) == 0)) ? 0 : -1;
+
+    if(s->encode) {
+        return (((s->outputter)(s->pointer, "\"", 1) == 0) &&
+                (has_json_string_encode(s, value, size) == 0) &&
+                ((s->outputter)(s->pointer, "\"", 1) == 0)) ? 0 : -1;
+    } else {
+        return (((s->outputter)(s->pointer, "\"", 1) == 0) &&
+                ((s->outputter)(s->pointer, value, size) == 0) &&
+                ((s->outputter)(s->pointer, "\"", 1) == 0)) ? 0 : -1;
+    }
 }
 
 int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
@@ -284,7 +464,7 @@ int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
     return r;
 }
 
-int has_json_serialize(has_t *input, char **output, size_t *size)
+int has_json_serialize(has_t *input, char **output, size_t *size, int encode)
 {
     has_json_serializer_buffer_t sb;
     has_json_serializer_t s;
