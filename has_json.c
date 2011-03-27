@@ -214,6 +214,36 @@ has_t *has_json_build_string(char *ptr, size_t len, bool decode)
         has_string_new_o(s, l, true);
 }
 
+has_t *has_json_decode_primitive(char *s, size_t l)
+{
+    has_t *r = NULL;
+    char c = s[0];
+
+    if(c == 'n') {
+        return (l == 4 && (memcmp(s, "null", 4) == 0)) ?
+            (has_new(1)) : NULL;
+    } else if(c == '-' || (c >= '0' && c <= '9')) {
+        int i;
+        /* We have a number */
+        for(i = 0; (s[i] != '.' && s[i] != 'e') && i < l; i++) /* Nothing */;
+        if(i <= l) {
+            /* double fp; */
+            /* Floating point */
+        } else {
+            /* int32_t integer; */
+            /* Integer */
+        }
+    } else if(c == 't') {
+        return (l == 4 && (memcmp(s, "true", 4) == 0)) ?
+            (has_bool_new(true)) : NULL;
+    } else if(c == 'f') {
+        return (l == 5 && (memcmp(s, "false", 5) == 0)) ?
+            (has_bool_new(false)) : NULL;
+    }
+
+    return r;
+}
+
 static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
                              const char *buffer, size_t *processed, bool decode)
 {
@@ -227,9 +257,8 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
 
     switch (tokens[cur].type) {
         case JSMN_PRIMITIVE:
-            /* FIXME: parse string */
-            r = has_string_new((char *) buffer + tokens[cur].start,
-                               tokens[cur].end - tokens[cur].start);
+            r = has_json_decode_primitive((char *) buffer + tokens[cur].start,
+                                          tokens[cur].end - tokens[cur].start);
             count++;
             break;
         case JSMN_STRING:
@@ -240,27 +269,26 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
         case JSMN_ARRAY:
             r = has_array_new(tokens[cur].size);
             count++;
-            for(i = 0; i < tokens[cur].size; i++) {
+            for(i = 0; i < tokens[cur].size && error == 0; i++) {
                 has_t *e = has_json_build(tokens, cur + count, max,
                                           buffer, &count, decode);
-                if(e) {
-                    has_array_push(r, e);
-                } else {
+                if(e == NULL || has_array_push(r, e) == NULL) {
                     error = 1;
-                    break;
                 }
             }
             break;
         case JSMN_OBJECT:
             r = has_hash_new(tokens[cur].size);
             count++;
-            for(i = 0; i < tokens[cur].size; i+= 2) {
+            for(i = 0; i < tokens[cur].size && error == 0; i+= 2) {
                 has_t *k = has_json_build(tokens, cur + count, max,
                                           buffer, &count, decode);
                 if(k) {
                     has_t *v = has_json_build(tokens, cur + count, max,
                                               buffer, &count, decode);
-                    has_hash_add(r, k, v);
+                    if(v == NULL || has_hash_add(r, k, v) == NULL) {
+                        error = 1;
+                    }
                 }
             }
             break;
@@ -387,23 +415,44 @@ int has_json_serializer_buffer_outputter(has_json_serializer_t *s,
 int has_json_string_encode(has_json_serializer_t *s,
                            const char *input, size_t length)
 {
-    return (s->outputter(s->pointer, input, length));
-    /*
-    for(i = 0; i < length; i++) {
-        char c = input[i];
+    unsigned int start = 0, stop = 0;
 
-        switch(c) {
-        case '\\':
-        case '\b':
-        case '\f':
-        case '\n':
-        case '\r':
-        case '\t':
+    while(stop < length) {
+        unsigned char c = input[stop];
+        char buffer[6] = { '\\', 'u', '0', '0', 0, 0 };
+        char *add = NULL;
+        size_t l = 2;
 
-        default:
+        if(c == '"') add = "\"";
+        else if(c == '\\') add = "\\\\";
+        else if(c == '\b') add = "\\b";
+        else if(c == '\f') add = "\\f";
+        else if(c == '\n') add = "\\n";
+        else if(c == '\r') add = "\\r";
+        else if(c == '\t') add = "\\t";
+        else if(c < 32) {
+            const char * hexchar = "0123456789ABCDEF";
+            buffer[4] = hexchar[c >> 4];
+            buffer[5] = hexchar[c & 0x0F];
+            add = buffer;
+            l = 6;
         }
+        if(add) {
+            if((s->outputter(s->pointer, input + start, stop - start)) < 0 ||
+               (s->outputter(s->pointer, add, l)) < 0) {
+                return -1;
+            }
+            start = stop + 1;
+        }
+        stop++;
     }
-    */
+
+    if((start < stop) &&
+       ((s->outputter(s->pointer, input + start, stop - start)) < 0)) {
+        return -1;
+    }
+
+    return 0;
 }
 
 int has_json_serialize_string(has_json_serializer_t *s,
