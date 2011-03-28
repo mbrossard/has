@@ -69,6 +69,9 @@ int has_walk_dump(has_t *cur, has_walk_t type, int index,
         has_dump_string(string, size);
         printf("\"\n");
     } else if(type == has_walk_other) {
+        if(cur->type == has_null) {
+            printf("null\n");
+        }
         /* Nothing yet */
     }
 
@@ -94,9 +97,10 @@ int main(int argc, char **argv)
     if((json = has_json_parse(buffer, false))) {
         has_dump(json);
         printf("Success\n");
+        has_free(json);
     } else {
         printf("Failure\n");
     }
-    has_free(json);
+
     return 0;
 }

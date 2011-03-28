@@ -53,26 +53,6 @@ int encode_utf8(int32_t codepoint, char *output)
         output[i++] = 0x80 | (char) ((codepoint & 0x00003F));
     }
 
-    /* This version should be smaller but it's less readable. */
-    /*
-    if(codepoint < 0x80) {
-        output[i++] = (char) codepoint;
-    } else {
-        if(codepoint < 0x800) {
-            output[i++] = 0xC0 | (char) ((codepoint & 0x0007C0) >> 6);
-        } else {
-            if(codepoint < 0x10000) {
-                output[i++] = 0xE0 | (char) ((codepoint & 0x00F000) >> 12);
-            } else {
-                output[i++] = 0xF0 | (char) ((codepoint & 0x1C0000) >> 18);
-                output[i++] = 0x80 | (char) ((codepoint & 0x03F000) >> 12);
-            }
-            output[i++] = 0x80 | (char) ((codepoint & 0x000FC0) >> 6);
-        }
-        output[i++] = 0x80 | (char) ((codepoint & 0x00003F));
-    }
-    */
-
     return i;
 }
 
@@ -229,9 +209,13 @@ has_t *has_json_decode_primitive(char *s, size_t l)
         if(i <= l) {
             /* double fp; */
             /* Floating point */
+            /* return has_double_new(0.0); */
+            r = has_json_build_string(s, l, false);
         } else {
             /* int32_t integer; */
             /* Integer */
+            /* return has_int_new(0); */
+            r = has_json_build_string(s, l, false);
         }
     } else if(c == 't') {
         return (l == 4 && (memcmp(s, "true", 4) == 0)) ?
@@ -262,8 +246,8 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
             count++;
             break;
         case JSMN_STRING:
-            has_json_build_string((char *) buffer + tokens[cur].start,
-                                  tokens[cur].end - tokens[cur].start, decode);
+            r = has_json_build_string((char *) buffer + tokens[cur].start,
+                                      tokens[cur].end - tokens[cur].start, decode);
             count++;
             break;
         case JSMN_ARRAY:
@@ -508,6 +492,9 @@ int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
         r = has_json_serialize_string(s, string, size);
     } else if(type == has_walk_other) {
         /* Nothing yet */
+        if(cur->type == has_null) {
+            r = (s->outputter)(s->pointer, "null", 4);
+        }
     }
 
     return r;
