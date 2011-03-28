@@ -16,6 +16,8 @@
 
 #define ESTIMATOR_TRESHOLD 2048
 
+static const char * hexchar = "0123456789ABCDEF";
+
 static size_t has_json_token_testimator(const char *a, size_t l)
 {
     size_t i, s = 0;
@@ -54,6 +56,43 @@ int encode_utf8(int32_t codepoint, char *output)
     }
 
     return i;
+}
+
+int decode_utf8(const char *input, size_t l, int32_t *codepoint)
+{
+    int i = 0, j  = 0;
+    unsigned char c;
+    int32_t cp = 0;
+
+    if(codepoint == NULL || l < 2) {
+        return -1;
+    }
+
+    c = *((const unsigned char *)input);
+    if((c & 0xE0) == 0xC0) {        /* 2 bytes */
+        cp = c & 0x1F;
+        j = 2;
+    } else if((c & 0xF0) == 0xE0) { /* 3 bytes */
+        cp = c & 0x0F;
+        j = 3;
+    } else if((c & 0xF8) == 0xF0) { /* 4 bytes */
+        cp = c & 0x07;
+        j = 4;
+    }
+
+    if(l < j) {
+        return -1;
+    }
+
+    for(i = 1; i < j; i++) {
+        c = *((const unsigned char *)input + i);
+        if((c & 0xC0) != 0x80) {
+            return -1;
+        }
+        cp = (cp << 6) | (c & 0x7F);
+    }
+    *codepoint = cp;
+    return j;
 }
 
 unsigned int decode_4hex(const char * hex)
@@ -106,6 +145,34 @@ int has_json_decode_unicode(char *input, unsigned int length,
     return read;
 }
 
+void escape_utf8_point(int32_t point, char *output)
+{
+    output[0] = '\\';
+    output[1] = 'u';
+    output[2] = hexchar[(point >> 12) & 0xF];
+    output[3] = hexchar[(point >>  8) & 0xF];
+    output[4] = hexchar[(point >>  4) & 0xF];
+    output[5] = hexchar[(point)       & 0xF];
+}
+
+int has_json_encode_unicode(uint32_t codepoint, char *output)
+{
+
+    if(codepoint < 0x10000) {
+        escape_utf8_point(codepoint, output);
+        return 6;
+   } else if(codepoint < 0x10FFFF) {
+        uint32_t low, high;
+        high = 0xD800 + ((codepoint - 0x10000) >> 10);
+        low  = 0xDC00 + ((codepoint - 0x10000) & 0x3FF);
+        escape_utf8_point(high, output);
+        escape_utf8_point( low, output + 6);
+        return 12;
+    } else {
+        return -1;
+    }
+}
+
 int has_json_string_decode(char *input, size_t length,
                            char **output, size_t *newlen)
 {
@@ -127,7 +194,7 @@ int has_json_string_decode(char *input, size_t length,
         return 0;
     }
 
-    n = malloc(length);
+    n = malloc(length); /* Decoded string will always be smaller */
     while(processed < length) {
         for(i = processed; input[i] != '\\' && i < length; i++) /* Nothing */ ;
         if(i == length) {
@@ -403,30 +470,40 @@ int has_json_string_encode(has_json_serializer_t *s,
 
     while(stop < length) {
         unsigned char c = input[stop];
-        char buffer[6] = { '\\', 'u', '0', '0', 0, 0 };
+        char buffer[6] = { '\\', 'u', '0', '0', 0, 0 }, unicode[12];
         char *add = NULL;
-        size_t l = 2;
+        size_t l = 2, m = 1;
 
-        if(c == '"') add = "\"";
-        else if(c == '\\') add = "\\\\";
-        else if(c == '\b') add = "\\b";
-        else if(c == '\f') add = "\\f";
-        else if(c == '\n') add = "\\n";
-        else if(c == '\r') add = "\\r";
-        else if(c == '\t') add = "\\t";
-        else if(c < 32) {
-            const char * hexchar = "0123456789ABCDEF";
-            buffer[4] = hexchar[c >> 4];
-            buffer[5] = hexchar[c & 0x0F];
-            add = buffer;
-            l = 6;
+        if(c == '"') {
+            add = "\"";
+        } else if(c == '\\') {
+            add = "\\\\";
+        } else if(s->encode) {
+            if(c == '\b') add = "\\b";
+            else if(c == '\f') add = "\\f";
+            else if(c == '\n') add = "\\n";
+            else if(c == '\r') add = "\\r";
+            else if(c == '\t') add = "\\t";
+            else if(c < 32) {
+                buffer[4] = hexchar[c >> 4];
+                buffer[5] = hexchar[c & 0x0F];
+                add = buffer;
+                l = 6;
+            } else if(c > 0x80) {
+                int32_t codepoint = 0;
+                if(((m = decode_utf8(input + stop, length - stop, &codepoint)) < 0) ||
+                   ((l = has_json_encode_unicode(codepoint, unicode)) < 0)) {
+                    return -1;
+                }
+                add = unicode;
+            }
         }
         if(add) {
             if((s->outputter(s->pointer, input + start, stop - start)) < 0 ||
                (s->outputter(s->pointer, add, l)) < 0) {
                 return -1;
             }
-            start = stop + 1;
+            start = stop + m;
         }
         stop++;
     }
