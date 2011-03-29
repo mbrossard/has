@@ -64,12 +64,15 @@ int decode_utf8(const char *input, size_t l, int32_t *codepoint)
     unsigned char c;
     int32_t cp = 0;
 
-    if(codepoint == NULL || l < 2) {
+    if(codepoint == NULL || l < 1) {
         return -1;
     }
 
     c = *((const unsigned char *)input);
-    if((c & 0xE0) == 0xC0) {        /* 2 bytes */
+    if(c < 0x80) {                  /* 1 byte */
+        *codepoint = c;
+        return 1;
+    } else if((c & 0xE0) == 0xC0) { /* 2 bytes */
         cp = c & 0x1F;
         j = 2;
     } else if((c & 0xF0) == 0xE0) { /* 3 bytes */
@@ -103,8 +106,8 @@ unsigned int decode_4hex(const char * hex)
         unsigned char c = hex[i];
 
         if ((c >= '0') && (c <= '9')) c -= '0';
-        else if ((c >= 'A') && (c <= 'F')) c -= 'A';
-        else if ((c >= 'a') && (c <= 'a')) c -= 'a';
+        else if ((c >= 'A') && (c <= 'F')) c -= 'A' - 10;
+        else if ((c >= 'a') && (c <= 'a')) c -= 'a' - 10;
         if(c & 0xF0) return 0xFFFFFFFF;
         r = (r << 4) | c;
     }
@@ -112,7 +115,7 @@ unsigned int decode_4hex(const char * hex)
 }
 
 int has_json_decode_unicode(char *input, unsigned int length,
-                            unsigned int *codepoint)
+                            int32_t *codepoint)
 {
     unsigned int point, read = 4;
     if(input == NULL || codepoint == NULL ||
@@ -125,10 +128,11 @@ int has_json_decode_unicode(char *input, unsigned int length,
         if(length < 10) { /* Do we have enough bytes remaining */
             return -1;
         }
-        if (input[5] == '\\' && input[6] == 'u') {
+
+        if (input[4] == '\\' && input[5] == 'u') {
             /* Low surrogate */
             unsigned int surrogate;
-            if((surrogate = decode_4hex(input + 7)) == 0xFFFFFFFF) {
+            if((surrogate = decode_4hex(input + 6)) == 0xFFFFFFFF) {
                 return -1;
             }
             read += 6;
@@ -215,7 +219,7 @@ int has_json_string_decode(char *input, size_t length,
             else if(c == 'r') add = "\r";
             else if(c == 't') add = "\t";
             else if(c == 'u') {
-                unsigned int point;
+                int32_t point;
                 processed += 2;
                 if((j = has_json_decode_unicode
                     (input + processed, length - processed, &point)) - 1) {
