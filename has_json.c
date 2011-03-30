@@ -447,23 +447,26 @@ typedef struct {
     bool owner;
 } has_json_serializer_buffer_t;
 
-int has_json_serializer_buffer_outputter(has_json_serializer_t *s,
+int has_json_serializer_buffer_outputter(has_json_serializer_buffer_t *b,
                                          const char *value, size_t size)
 {
-    has_json_serializer_buffer_t *b;
-
-    if(s == NULL) {
+    if(b == NULL) {
         return -1;
     }
-    b = s->pointer;
-    if(size > b->size - b->current) {
-        /* Handle resizing */
-        return -1;
+
+    if(size > (b->size - b->current)) {
+        char *t;
+        size_t s = b->size * 2;
+        while((s - b->current) < size) s = s * 2;
+        if(!b->owner || (t = realloc(b->buffer, s)) == NULL) {
+            return -1;
+        }
+        b->buffer = t;
+        b->size = s;
     }
 
     memcpy(b->buffer + b->current, value, size);
     b->current += size;
-
     return 0;
 }
 
@@ -602,13 +605,16 @@ int has_json_serialize(has_t *input, char **output, size_t *size, int encode)
     }
     sb.current = 0;
 
-    s.outputter = has_json_serializer_buffer_outputter;
+    s.encode = (encode) ? true : false;
+    s.outputter = (has_json_outputter)has_json_serializer_buffer_outputter;
     s.pointer = &sb;
 
-    if(has_walk(input, has_json_serializer_walker, &s) == 0) {
+    if((has_walk(input, has_json_serializer_walker, &s) == 0) &&
+       (has_json_serializer_buffer_outputter(&sb, "\0", 1) == 0)) {
         *output = sb.buffer;
-        *size = sb.current;
+        *size = sb.current - 1;
     } else {
+        free(sb.buffer);
         return -1;
     }
     return 0;
