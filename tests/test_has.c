@@ -46,6 +46,28 @@ int main(int argc, char **argv)
     printf("Looking up: %f\n", t2 - t1);
 
     t1 = epoch_double();
+    for(i = 0; i < j; i++) {
+        has_hash_remove(h, buffer + i * 8, 8);
+    }
+    t2 = epoch_double();
+    printf("Individual removal: %f\n", t2 - t1);
+
+    t1 = epoch_double();
+    for(i = 0; i < j; i++) {
+        has_hash_set(h, buffer + i * 8, 8, &(vals[i]));
+    }
+    t2 = epoch_double();
+    printf("Adding: %f\n", t2 - t1);
+
+    t1 = epoch_double();
+    for(i = 0; i < j; i++) {
+        has_hash_set(h, buffer + i * 8, 8, &(vals[i]));
+    }
+    t2 = epoch_double();
+    printf("Adding again: %f\n", t2 - t1);
+
+
+    t1 = epoch_double();
     has_free(h);
     t2 = epoch_double();
     printf("Deleting: %f\n", t2 - t1);
