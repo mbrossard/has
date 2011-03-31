@@ -139,36 +139,45 @@ inline bool has_is_hash(has_t *e)
 
 has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner)
 {
-    has_hash_list_t *l, *cur, *prev;
+    has_hash_list_t *l = NULL, *cur = NULL, *prev = NULL;
+    int32_t h;
 
-    if(hash == NULL || hash->type != has_hash ||
-       (l = calloc(sizeof(has_hash_list_t), 1)) == NULL) {
+    if(hash == NULL || hash->type != has_hash) {
+        return NULL;
+    }
+    h = has_hash_function(key, size);
+
+    /* Search for a value with same key */
+    cur = hash->value.hash.elements[ h % hash->value.hash.size ];
+    for(;cur; prev = cur, cur = cur->next) {
+        if((cur->hash == h) &&                 /* Check hash */
+           (cur->size == size) &&                 /* Check key size */
+           memcmp(cur->key, key, size) == 0) { /* Compare keys */
+            /* Found a previous value with same key */
+            has_free(cur->value);   /* Free the value */
+            if(cur->owner) {
+                free(cur->key);     /* Free the key if we own it */
+            }
+            l = cur;
+            break;
+        }
+    }
+    if((l == NULL) && ((l = calloc(sizeof(has_hash_list_t), 1)) == NULL)) {
         return NULL;
     }
 
     l->key = key;
     l->size = size;
-    l->hash = has_hash_function(key, size);
+    l->hash = h;
     l->owner = owner;
     l->value = value;
 
-    /* Insert in front */
-    l->next = hash->value.hash.elements[ l->hash % hash->value.hash.size ];
-    hash->value.hash.elements[ l->hash % hash->value.hash.size ] = l;
-
-    /* Search for a value with same key */
-    for(prev = l, cur = l->next; cur; prev = cur, cur = cur->next) {
-        if((cur->hash == l->hash) &&                 /* Check hash */
-           (cur->size == l->size) &&                 /* Check key size */
-           memcmp(cur->key, l->key, l->size) == 0) { /* Compare keys */
-            /* Found a previous value with same key */
-            prev->next = cur->next; /* Remove it from hash link */
-            has_free(cur->value);   /* Free the value */
-            if(cur->owner) {
-                free(cur->key);     /* Free the key if we own it */
-            }
-            free(cur);              /* Free the hash link entry */
-            break;
+    if(cur == NULL) {
+        /* We need to insert a new element */
+        if(prev == NULL) {
+            hash->value.hash.elements[ h % hash->value.hash.size ] = l;
+        } else {
+            prev->next = l;
         }
     }
     return hash;
