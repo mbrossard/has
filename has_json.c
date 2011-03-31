@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define ESTIMATOR_TRESHOLD 2048
 
@@ -274,19 +275,27 @@ has_t *has_json_decode_primitive(char *s, size_t l)
         return (l == 4 && (memcmp(s, "null", 4) == 0)) ?
             (has_new(1)) : NULL;
     } else if(c == '-' || (c >= '0' && c <= '9')) {
+        char buffer[32], *tmp;
         int i;
         /* We have a number */
+        if(l > (sizeof(buffer) - 1)) {
+            return NULL;
+        }
+        memcpy(buffer, s, l);
+        buffer[l] = '\0';
         for(i = 0; (s[i] != '.' && s[i] != 'e') && i < l; i++) /* Nothing */;
-        if(i <= l) {
-            /* double fp; */
+        if(i < l) {
             /* Floating point */
-            /* return has_double_new(0.0); */
-            r = has_json_build_string(s, l, false);
+            double fp = strtod(buffer, &tmp);
+            if(buffer != tmp) {
+                r = has_double_new(fp);
+            }
         } else {
-            /* int32_t integer; */
             /* Integer */
-            /* return has_int_new(0); */
-            r = has_json_build_string(s, l, false);
+            int32_t integer = strtol(buffer, &tmp, 10);
+            if(buffer != tmp) {
+                r = has_int_new(integer);
+            }
         }
     } else if(c == 't') {
         return (l == 4 && (memcmp(s, "true", 4) == 0)) ?
@@ -384,49 +393,6 @@ has_t *has_json_parse(const char *buffer, bool decode)
     r = has_json_build(tokens, 0, max_tokens, buffer, NULL, decode);
     free(tokens);
     return r;
-}
-
-typedef struct {
-    size_t size;
-    bool encode;
-} has_json_estimate_t;
-
-int has_json_estimate_walker(has_t *cur, has_walk_t type, int index,
-                  const char *string, size_t size, has_t *element,
-                  void *pointer)
-{
-    has_json_estimate_t *e = pointer;
-
-    if(cur == NULL) {
-        return -1;
-    }
-
-    if(type == has_walk_hash_begin) {
-        e->size += 2 +                      /* '{' and '}'             */
-            + ( cur->value.hash.count ) * 4 /* key quotes, ':' and ',' */
-            - 1;                            /* no ',' after last entry */
-    } else if(type == has_walk_hash_key) {
-        e->size += size;
-        /* FIXME: handle string encoding case */
-    } else if(type == has_walk_array_begin) {
-        e->size += 2 +                       /* '[' and ']'         */
-            + ( cur->value.hash.count ) - 1; /* ',' between entries */
-    } else if(type == has_walk_string) {
-        e->size += 2 + size;
-        /* FIXME: handle string encoding case */
-    } else if(type == has_walk_other) {
-        /* FIXME: Nothing yet */
-    }
-
-    return 0;
-}
-
-size_t has_json_estimate(has_t *input, bool encode)
-{
-    has_json_estimate_t e;
-    e.size = 0;
-    e.encode = false;
-    return (has_walk(input, has_json_estimate_walker, &e) == 0) ? e.size : 0;
 }
 
 typedef struct has_json_serializer_t has_json_serializer_t;
@@ -575,9 +541,19 @@ int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
     } else if(type == has_walk_string) {
         r = has_json_serialize_string(s, string, size);
     } else if(type == has_walk_other) {
-        /* Nothing yet */
         if(cur->type == has_null) {
             r = (s->outputter)(s->pointer, "null", 4);
+        } else if(cur->type == has_integer) {
+            char buffer[64];
+            int l = snprintf(buffer, sizeof(buffer) - 1, "%d", cur->value.integer);
+            r = (l > 0) ? (s->outputter)(s->pointer, buffer, l) : -1;
+        } else if(cur->type == has_double) {
+            char buffer[64];
+            int l = snprintf(buffer, sizeof(buffer) - 1, "%f", cur->value.fp);
+            r = (l > 0) ? (s->outputter)(s->pointer, buffer, l) : -1;
+        } else if(cur->type == has_boolean) {
+            r = (cur->value.boolean) ? (s->outputter)(s->pointer, "true", 4) :
+                (s->outputter)(s->pointer, "false", 5);
         }
     }
 

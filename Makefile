@@ -1,5 +1,5 @@
 
-CFLAGS = -O2 -g -I. -Wall -pedantic
+CFLAGS = -O0 -g -I. -Wall -pedantic
 
 all: tests/test_has tests/test_json tests/test_utf8
 
