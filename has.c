@@ -205,13 +205,18 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
 
     if(hash->value.hash.size == hash->value.hash.count) {
         has_hash_entry_t **t;
-        i = 2 * hash->value.hash.size;
-        if(((e = realloc(hash->value.hash.entries,
-                        i * sizeof(has_hash_entry_t))) == NULL) ||
-           (t = calloc(hash_size(2 * i), sizeof(has_hash_entry_t *))) == NULL) {
+        i = hash->value.hash.size * sizeof(has_hash_entry_t);
+        if((e = calloc(2* i, 1)) == NULL) {
             return NULL;
         }
+        memcpy(e, hash->value.hash.entries, i);
+        free(hash->value.hash.entries);
         hash->value.hash.entries = e;
+
+        i = 2 * hash->value.hash.size;
+        if((t = calloc(hash_size(i), sizeof(has_hash_entry_t *))) == NULL) {
+            return NULL;
+        }
         free(hash->value.hash.hash);
         hash->value.hash.hash = t;
 
