@@ -13,43 +13,8 @@
 #define hash_size(s) ((s) + ((s) >> 1))
 #define hash_freed ((void *)1)
 #define hash_hash(d, i) (d->value.hash.hash[i])
-
-__inline__ static uint32_t hash_first(has_t *d, uint32_t h)
-{
-       return h % hash_size(d->value.hash.size);
-}
-
-__inline__ static uint32_t hash_next(has_t *d, uint32_t i)
-{
-       return ((i + 1) == hash_size(d->value.hash.size)) ? 0 : i + 1;
-}
-
-__inline__ static has_hash_entry_t *hash_get(has_t *d, const char *key,
-                                             size_t size, uint32_t hash)
-{
-    size_t            i;
-    has_hash_entry_t *e = NULL;
-
-    for(i = hash_first(d, hash); (e = hash_hash(d, i)) ; i = hash_next(d, i)) {
-        if((e != hash_freed) &&                        /* Check freed */
-           (e->hash == hash) &&                        /* Check hash */
-           (e->key.size == size) &&                    /* Check key size */
-           (memcmp(e->key.pointer, key, size) == 0)) { /* Full key compare */
-            break;
-        }
-    }
-    return NULL ;
-}
-
-__inline__ static void hash_set(has_t *d, uint32_t hash, has_hash_entry_t *e)
-{
-    size_t          i = hash_first(d, hash);
-
-    while(hash_hash(d, i) != NULL && hash_hash(d, i) != hash_freed) {
-        i = hash_next(d, i);
-    }
-    hash_hash(d, i) = e;
-}
+#define hash_first(d, h) (h % hash_size(d->value.hash.size))
+#define hash_next(d, i) (((i + 1) == hash_size(d->value.hash.size)) ? 0 : i + 1)
 
 has_t * has_new(size_t count)
 {
@@ -181,9 +146,9 @@ inline bool has_is_hash(has_t *e)
 
 has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool owner)
 {
+    size_t            i, j;
     has_hash_entry_t *e = NULL;
-    int32_t h;
-    size_t i;
+    int32_t           h;
 
     if(hash == NULL || hash->type != has_hash) {
         return NULL;
@@ -191,15 +156,21 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
 
     h = has_hash_function(key, size);
     /* Search for a value with same key */
-    if((e = hash_get(hash, key, size, h))) {
-        has_free(e->value);       /* Free the value */
-        e->value = value;
-        if(e->key.owner) {
-            free(e->key.pointer); /* Free the key if we own it */
+
+    for(i = hash_first(hash, h); (e = hash_hash(hash, i)) ; i = hash_next(hash, i)) {
+        if((e != hash_freed) &&                        /* Check freed */
+           (e->hash == h) &&                           /* Check hash */
+           (e->key.size == size) &&                    /* Check key size */
+           (memcmp(e->key.pointer, key, size) == 0)) { /* Full key compare */
+            has_free(e->value);       /* Free the value */
+            e->value = value;
+            if(e->key.owner) {
+                free(e->key.pointer); /* Free the key if we own it */
+            }
+            e->key.pointer = key;
+            e->key.owner = owner;
+            return hash;
         }
-        e->key.pointer = key;
-        e->key.owner = owner;
-        return hash;
     }
 
     if(hash->value.hash.size == hash->value.hash.count) {
@@ -224,7 +195,11 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
         /* Rebuild hash table */
         for(i = 0 ; i < hash->value.hash.count ; i++) {
             e = &(hash->value.hash.entries[i]);
-            hash_set(hash, e->hash, e);
+            j = hash_first(hash, e->hash);
+            while(hash_hash(hash, j) != NULL && hash_hash(hash, j) != hash_freed) {
+                j = hash_next(hash, j);
+            }
+            hash_hash(hash, j) = e;
         }
     }
 
@@ -233,9 +208,7 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
        hash->value.hash.size. Because hash->value.hash.count <
        hash->value.hash.size this will necessarily terminate. */
     for (i = hash->value.hash.count ; hash->value.hash.entries[i].key.pointer ; ) {
-        if(++i == hash->value.hash.size) {
-            i = 0;
-        }
+        i = (i + 1 == hash->value.hash.size) ? 0 : i + 1;
     }
 
     /* Insert element */
@@ -246,7 +219,11 @@ has_t * has_hash_set_o(has_t *hash, char *key, size_t size, has_t *value, bool o
     e->hash = h;
     e->value = value;
 
-    hash_set(hash, e->hash, e);
+    j = hash_first(hash, e->hash);
+    while(hash_hash(hash, j) != NULL && hash_hash(hash, j) != hash_freed) {
+        j = hash_next(hash, j);
+    }
+    hash_hash(hash, j) = e;
 
     /* Increase counter */
     hash->value.hash.count++;
@@ -294,11 +271,24 @@ has_t *has_hash_add(has_t *h, has_t *k, has_t *v)
 
 bool has_hash_exists(has_t *hash, const char *key, size_t size)
 {
-    bool r = false;
+    size_t            i;
+    uint32_t          h;
+    has_hash_entry_t *e = NULL;
+    bool              r = false;
 
-    if(hash) {
-        uint32_t h = has_hash_function(key, size);
-        r = (hash_get(hash, key, size, h)) ? true : false;
+    if(!hash) {
+        return r;
+    }
+
+    h = has_hash_function(key, size);
+    for(i = hash_first(hash, h); (e = hash_hash(hash, i)) ; i = hash_next(hash, i)) {
+        if((e != hash_freed) &&                        /* Check freed */
+           (e->hash == h) &&                           /* Check hash */
+           (e->key.size == size) &&                    /* Check key size */
+           (memcmp(e->key.pointer, key, size) == 0)) { /* Full key compare */
+            r = true;
+            break;
+        }
     }
 
     return r;
@@ -311,12 +301,24 @@ bool has_hash_exists_str(has_t *hash, const char *string)
 
 has_t * has_hash_get(has_t *hash, const char *key, size_t size)
 {
-    has_t *r = NULL;
+    size_t            i;
+    uint32_t          h;
+    has_hash_entry_t *e = NULL;
+    has_t            *r = NULL;
 
-    if(hash) {
-        uint32_t h = has_hash_function(key, size);
-        has_hash_entry_t *e = hash_get(hash, key, size, h);
-        r = (e) ? e->value : NULL;
+    if(!hash) {
+        return r;
+    }
+
+    h = has_hash_function(key, size);
+    for(i = hash_first(hash, h); (e = hash_hash(hash, i)) ; i = hash_next(hash, i)) {
+        if((e != hash_freed) &&                        /* Check freed */
+           (e->hash == h) &&                           /* Check hash */
+           (e->key.size == size) &&                    /* Check key size */
+           (memcmp(e->key.pointer, key, size) == 0)) { /* Full key compare */
+            r = e->value;
+            break;
+        }
     }
 
     return r;
@@ -357,6 +359,14 @@ has_t * has_hash_remove(has_t *hash, const char *key, size_t size)
             e->key.pointer = NULL;
             break;
         }
+    }
+
+    /* Resilver when hash is empty */
+    if(hash->value.hash.count == 0) {
+        memset(hash->value.hash.entries, 0,
+               hash->value.hash.size * sizeof(has_hash_entry_t));
+        memset(hash->value.hash.hash, 0,
+               hash_size(hash->value.hash.size) * sizeof(has_hash_entry_t *));
     }
 
     return r;
