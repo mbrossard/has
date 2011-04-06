@@ -220,7 +220,7 @@ int has_json_string_decode(char *input, size_t length,
             else if(c == 'r') add = "\r";
             else if(c == 't') add = "\t";
             else if(c == 'u') {
-                int32_t point;
+                int32_t point = 0;
                 processed += 2;
                 if((j = has_json_decode_unicode
                     (input + processed, length - processed, &point)) - 1) {

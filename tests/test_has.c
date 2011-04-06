@@ -20,13 +20,13 @@ int main(int argc, char **argv)
     int i, j = 1024 * 1024 * 1;
     char *buffer = malloc(8 * j + 4);
 #ifndef BENCH
-    has_t* h = has_hash_new(j / 4);
+    has_t* h = has_hash_new(64);
     has_t* vals = has_new(j);
 #else
-    has_t* h = has_hash_new(j * 2);
+    has_t* h = has_hash_new(j);
 #endif
     double t1, t2;
-    
+
     t1 = epoch_double();
     for(i = 0; i < j; i++) {
         sprintf(buffer + i * 8, "%08x", i);
@@ -83,7 +83,6 @@ int main(int argc, char **argv)
     }
     t2 = epoch_double();
     printf("Adding again: %f\n", t2 - t1);
-
 
     t1 = epoch_double();
     has_free(h);
