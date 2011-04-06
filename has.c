@@ -28,17 +28,16 @@ __inline__ static has_hash_entry_t *hash_get(has_t *d, const char *key,
                                              size_t size, uint32_t hash)
 {
     size_t            i;
-    has_hash_entry_t *e;
+    has_hash_entry_t *e = NULL;
 
     for(i = hash_first(d, hash); (e = hash_hash(d, i)) ; i = hash_next(d, i)) {
         if((e != hash_freed) &&                        /* Check freed */
            (e->hash == hash) &&                        /* Check hash */
            (e->key.size == size) &&                    /* Check key size */
            (memcmp(e->key.pointer, key, size) == 0)) { /* Full key compare */
-            return e;
+            break;
         }
     }
-
     return NULL ;
 }
 
@@ -314,7 +313,7 @@ has_t * has_hash_get(has_t *hash, const char *key, size_t size)
 {
     has_t *r = NULL;
 
-    if(hash == NULL) {
+    if(hash) {
         uint32_t h = has_hash_function(key, size);
         has_hash_entry_t *e = hash_get(hash, key, size, h);
         r = (e) ? e->value : NULL;
@@ -348,12 +347,14 @@ has_t * has_hash_remove(has_t *hash, const char *key, size_t size)
             if(e->key.owner) {
                 free(e->key.pointer);
             }
+            r = e->value;
+
             /* Lazy free */
             hash->value.hash.hash[i] = hash_freed;
             hash->value.hash.count--;
-            r = e->value;
-
-            memset(e, 0, sizeof(has_hash_entry_t));
+            e->hash = 0;
+            e->key.size = 0;
+            e->key.pointer = NULL;
             break;
         }
     }
