@@ -445,7 +445,7 @@ int has_json_string_encode(has_json_serializer_t *s,
         unsigned char c = input[stop];
         char buffer[6] = { '\\', 'u', '0', '0', 0, 0 }, unicode[12];
         char *add = NULL;
-        size_t l = 2, m = 1;
+        int l = 2, m = 1;
 
         if(c == '"') {
             add = "\"";
