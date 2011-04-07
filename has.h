@@ -74,16 +74,15 @@ typedef enum {
  * @brief Main structure
  */
 typedef struct has_t has_t;
-typedef struct has_hash_list_t has_hash_list_t;
 
 /**
  * @struct has_string_t
  * @brief String Structure
  */
 typedef struct {
-    char *pointer;
-    size_t size;
-    bool owner;
+    char     *pointer;
+    size_t    size;
+    bool      owner;
 } has_string_t;
 
 /**
@@ -91,19 +90,30 @@ typedef struct {
  * @brief Array Structure
  */
 typedef struct {
-    has_t **elements;
-    size_t size;
-    size_t count;
+    has_t     **elements;
+    size_t      size;
+    size_t      count;
 } has_array_t;
+
+/**
+ * @struct has_hash_entry_t
+ * @brief Associative Array Sub-structure
+ */
+typedef struct  {
+    uint32_t      hash;
+    has_t        *value;    
+    has_string_t  key;
+} has_hash_entry_t;
 
 /**
  * @struct has_hash_t
  * @brief Associative Array Structure
  */
 typedef struct {
-    has_hash_list_t **elements;
-    size_t size;
-    size_t count;
+    has_hash_entry_t  *entries;
+    has_hash_entry_t **hash;
+    size_t             size;
+    size_t             count;
 } has_hash_t;
 
 struct has_t {
@@ -121,18 +131,6 @@ struct has_t {
     bool owner;
 };
 
-/**
- * @struct has_hash_list_t
- * @brief Associative Array Sub-structure
- */
-struct has_hash_list_t {
-    uint32_t hash;
-    char *key;
-    size_t size;
-    has_t *value;
-    has_hash_list_t *next;
-    bool owner;
-};
 
 /**
  * @typedef has_walk_function_t
