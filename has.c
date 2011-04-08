@@ -392,10 +392,111 @@ bool has_hash_delete_str(has_t *hash, const char *string)
     return has_hash_delete(hash, string, strlen(string));
 }
 
+int has_hash_keys_values(has_t *hash, char ***keys, size_t **lengths,
+                         has_t ***values, int *count)
+{
+    char  **k = NULL;
+    size_t *l = NULL;
+    has_t  **v = NULL;
+    int     i, j;
+
+    if(hash == NULL || hash->type != has_hash ||
+       (keys == NULL && lengths == NULL && values == NULL) ||
+       ((keys == NULL) != (lengths == NULL)) ||
+       ((keys && lengths) &&
+        ((k = calloc(sizeof(char *), (hash->value.hash.count + 1))) == NULL ||
+         (l = calloc(sizeof(size_t), (hash->value.hash.count + 1))) == NULL)) ||
+       ((values != NULL) &&
+        (v = calloc(sizeof(has_t *), (hash->value.hash.count + 1))) == NULL)) {
+        return -1;
+    }
+
+    for(i = 0, j = 0; j < hash->value.hash.count &&
+            i < hash->value.hash.size; i++) {
+        if(hash->value.hash.entries[i].key.pointer) {
+            if(k && l) {
+                k[j] = hash->value.hash.entries[i].key.pointer;
+                l[j] = hash->value.hash.entries[i].key.size;
+            }
+            if(v) {
+                v[j] = hash->value.hash.entries[i].value;
+            }
+            j++;
+        }
+    }
+    if(count) {
+        *count = hash->value.hash.count;
+    }
+
+    if(keys && lengths) {
+        *keys = k;
+        *lengths = l;
+    }
+    if(values) {
+        *values = v;
+    }
+    return 0;
+}
+
+int has_hash_keys(has_t *hash, char ***keys, size_t** lengths, int *count)
+{
+    return has_hash_keys_values(hash, keys, lengths, NULL, count);
+}
+
+int has_hash_values(has_t *hash, has_t ***values, int *count)
+{
+    return has_hash_keys_values(hash, NULL, NULL, values, count);
+}
+
+static char *xstrndup(const char *str, int l)
+{
+    char *r = NULL;
+    if(l >= 0 && (r = calloc(l + 1, 1)) != NULL) {
+        memcpy(r, str, l);
+    }
+    return r;
+}
+
+int has_hash_keys_str(has_t *hash, char ***keys, int *count)
+{
+    char **k;
+    int i, j;
+
+    if(hash == NULL || hash->type != has_hash || keys == NULL ||
+       (k = calloc(sizeof(char *), (hash->value.hash.count + 1))) == NULL) {
+        return -1;
+    }
+
+    for(i = 0, j = 0; j < hash->value.hash.count &&
+            i < hash->value.hash.size; i++) {
+        if(hash->value.hash.entries[i].key.pointer) {
+            if((k[j] = xstrndup(hash->value.hash.entries[i].key.pointer,
+                                hash->value.hash.entries[i].key.size)) == NULL) {
+                break;
+            }
+            j++;
+        }
+    }
+
+    if(j != hash->value.hash.count) {
+        for(i = 0 ; k[i]; i++) {
+            free(k[i]);
+        }
+        free(k);
+        return -1;
+    }
+
+    if(count) {
+        *count = hash->value.hash.count;
+    }
+    *keys = k;
+    return 0;
+}
+
 has_t * has_array_new(size_t size)
 {
     has_t *r = has_new(1), *s = NULL;
-    if((s = has_array_init(r, size)) == NULL) {
+    if(r && (s = has_array_init(r, size)) == NULL) {
         has_free(r);
     }
     return s;
