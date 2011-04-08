@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <assert.h>
 
 double epoch_double()
 {
@@ -50,7 +51,7 @@ int main(int argc, char **argv)
 
     t1 = epoch_double();
     for(i = 0; i < j; i++) {
-        has_hash_get(h, buffer + i * 8, 8);
+        assert(has_hash_get(h, buffer + i * 8, 8));
     }
     t2 = epoch_double();
     printf("Looking up: %f\n", t2 - t1);
