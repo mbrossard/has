@@ -285,7 +285,7 @@ bool has_hash_exists(has_t *hash, const char *key, size_t size);
 bool has_hash_exists_str(has_t *hash, const char *string);
 
 /**
- * @brief Retrieves an entry from hash from its key.
+ * @brief Retrieves an entry from hash based on its key.
  * @param [in] hash  Pointer to hash has_t element to test.
  * @param [in] key   Pointer to the key.
  * @param [in] size  Size of the key.
@@ -295,7 +295,8 @@ bool has_hash_exists_str(has_t *hash, const char *string);
 has_t * has_hash_get(has_t *hash, const char *key, size_t size);
 
 /**
- * @brief Retrieves an entry from hash from its key (passed as string).
+ * @brief Retrieves an entry from hash based on its key (passed as
+ * string).
  * @param [in] hash  Pointer to hash has_t element to test.
  * @param [in] string Pointer to <tt>NULL</tt>-terminated string
  * containing the key.
@@ -305,10 +306,23 @@ has_t * has_hash_get(has_t *hash, const char *key, size_t size);
 has_t * has_hash_get_str(has_t *hash, const char *string);
 
 /**
+ * @brief Removes an entry from hash based on its key.
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
+ * @return the value corresponding to the key, @c NULL if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 has_t * has_hash_remove(has_t *hash, const char *key, size_t size);
 
 /**
+ * @brief Removes an entry from hash based on its key (passed as
+ * string).
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
+ * @return the value corresponding to the key, @c NULL if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 has_t * has_hash_remove_str(has_t *hash, const char *string);
 
@@ -317,12 +331,37 @@ has_t * has_hash_remove_str(has_t *hash, const char *string);
 bool has_hash_delete(has_t *hash, const char *key, size_t size);
 
 /**
+ * @brief Deletes an entry from hash based on its key (passed as
+ * string).
+ * @param [in] hash  Pointer to hash has_t element to test.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
+ * @return @c true if found and @c false if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 bool has_hash_delete_str(has_t *hash, const char *string);
 
-int has_hash_keys(has_t *hash, char **keys, size_t* lengths, int *count);
-int has_hash_keys_values(has_t *hash, char **keys, size_t* lengths,
-                         has_t **values, int *count);
+/**
+ * @brief Retrieves hash keys pointers and lengthes in C arrays
+ */
+int has_hash_keys(has_t *hash, char ***keys, size_t** lengths, int *count);
+
+/**
+ * @brief Retrieves hash values in C array
+ */
+int has_hash_values(has_t *hash, has_t ***values, int *count);
+
+/**
+ * @brief Retrieves hash content in C arrays
+ */
+int has_hash_keys_values(has_t *hash, char ***keys, size_t** lengths,
+                         has_t ***values, int *count);
+
+/**
+ * @brief Retrieves hash keys as <tt>NULL</tt>-terminated strings
+ */
+int has_hash_keys_str(has_t *hash, char ***keys, int *count);
+
 /** @} */
 
 /**
