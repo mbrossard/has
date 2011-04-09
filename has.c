@@ -88,6 +88,7 @@ int has_walk(has_t *e, has_walk_function_t f, void *p)
                 WF(r, f(e, has_walk_hash_value_begin, j, NULL, 0, l->value, p));
                 WF(r, has_walk(l->value, f, p));
                 WF(r, f(e, has_walk_hash_value_end, j, NULL, 0, l->value, p));
+                j++;
             }
         }
         WF(r, f(e, has_walk_hash_end, 0, NULL, 0, NULL, p));
