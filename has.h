@@ -183,21 +183,26 @@ int has_walk(has_t *e, has_walk_function_t f, void *p);
 
 /**
  * @brief Allocates and initializes a hash has_t structure.
+ * @param [in] size Initial size of the hash
  */
 has_t * has_hash_new(size_t size);
 
 /**
  * @brief Initializes a hash has_t structure.
+ * @param [in] hash Pointer to hash has_t element to initialize
+ * @param [in] size Initial size of the hash
  */
 has_t * has_hash_init(has_t *hash, size_t size);
 
 /**
  * @brief Tests if a has_t structure is a hash.
+ * @param [in] hash Pointer to hash has_t element to test
  */
 bool has_is_hash(has_t *e);
 
 /**
  * @brief Retrieves the number of elements in a hash has_t structure.
+ * @param [in] hash Pointer to hash has_t element
  */
 int has_hash_count(has_t *hash);
 
@@ -241,7 +246,7 @@ has_t * has_hash_set_str(has_t *hash, char *string, has_t *value);
  * @brief Adds an element to hash with key as string and ownership
  * @param [in] hash   Pointer to hash has_t element to which add the value.
  * @param [in] string Pointer to <tt>NULL</tt>-terminated string to be
- * used as key
+ * used as key.
  * @param [in] value  Pointer to has_t element containing the value.
  * @param [in] owner  Boolean value specifying the ownership of the key.
  * @return hash if successful or @c NULL if has is not defined, is not a
@@ -371,52 +376,84 @@ int has_hash_keys_str(has_t *hash, char ***keys, int *count);
 
 /**
  * @brief Allocates and initializes an array has_t element.
+ * @param [in] size Initial size of the hash
+ * @return Pointer to array has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_new(size_t size);
 
 /**
  * @brief Initializes an array has_t element.
+ * @param [in] array  Pointer to array has_t element to initialize.
+ * @param [in] size Initial size of the hash
+ * @return Pointer to array has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_init(has_t *array, size_t size);
 
 /**
  * @brief Tests if a has_t element is an array.
+ * @param [in] array  Pointer to array has_t
  */
 bool has_is_array(has_t *e);
 
 /**
  * @brief Retrieves the number of elements in an array has_t
  * element.
+ * @param [in] array  Pointer to array has_t.
  */
 int has_array_count(has_t *array);
 
 /**
- *
+ * @brief Adds an element at the end of a has_t array.
+ * @param [in] array  Pointer to array has_t.
+ * @param [in] value  Pointer to has_t value.
+ * @return Pointer to array has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_push(has_t *array, has_t *value);
 
 /**
- *
+ * @brief Retrieves an element from the end of a has_t array.
+ * @param [in] array  Pointer to array has_t
+ * @return Pointer to has_t element retrieved if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_pop(has_t *a);
 
 /**
- *
+ * @brief Adds an element at the start of a has_t array.
+ * @param [in] array  Pointer to array has_t
+ * @param [in] value  Pointer to has_t value.
+ * @return Pointer to array has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_unshift(has_t *array, has_t *value);
 
 /**
- *
+ * @brief Retrieves an element from the start of a has_t array.
+ * @param [in] array  Pointer to array has_t.
+ * @return Pointer to has_t element retrieved if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_shift(has_t *a);
 
 /**
- *
+ * @brief Sets an element at given postion of a has_t array.
+ * @param [in] array  Pointer to array has_t.
+ * @param [in] index  Index at which set the value.
+ * @param [in] value  Pointer to has_t value.
+ * @return Pointer to array has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_set(has_t *array, size_t index, has_t *value);
 
 /**
- *
+ * @brief Retrieves an element at given postion of a has_t array.
+ * @param [in] array  Pointer to array has_t.
+ * @param [in] index  Index at which retrieve the value.
+ * @return Pointer to has_t element retrieved if successful, @c NULL
+ * otherwise.
  */
 has_t * has_array_get(has_t *array, size_t index);
 
@@ -430,17 +467,69 @@ has_t * has_array_get(has_t *array, size_t index);
 
 /**
  * @brief Allocates and initializes a string has_t element.
+ * @param [in] string Pointer to string.
+ * @param [in] size   Size of string.
+ * @return Pointer to string has_t element if successful, @c NULL
+ * otherwise.
  */
 has_t * has_string_new(char *pointer, size_t size);
+
+/**
+ * @brief Allocates and initializes a string has_t element with
+ * ownership.
+ * @param [in] string Pointer to string.
+ * @param [in] size   Size of string.
+ * @param [in] owner  Boolean value specifying the ownership of the
+ * string.
+ * @return Pointer to string has_t element if successful, @c NULL
+ * otherwise.
+ */
 has_t * has_string_new_o(char *pointer, size_t size, bool owner);
+
+/**
+ * @brief Allocates and initializes a string has_t element with
+ * string.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string.
+ * @return Pointer to string has_t element if successful, @c NULL
+ * otherwise.
+ */
 has_t * has_string_new_str(char *string);
+
+/**
+ * @brief Allocates and initializes a string has_t element with string
+ * and owner ship.
+ * @param [in] string Pointer to <tt>NULL</tt>-terminated string.
+ * @param [in] owner  Boolean value specifying the ownership of the string.
+ * @return Pointer to string has_t element if successful, @c NULL
+ * otherwise.
+ */
 has_t * has_string_new_str_o(char *string, bool owner);
 
+/**
+ * @brief Initializes a string has_t element with ownership.
+ * @param [in] string  Pointer to has_t element to initialize.
+ * @param [in] pointer Pointer to string.
+ * @param [in] size    Size of string.
+ * @param [in] owner   Boolean value specifying the ownership of the
+ * string.
+ * @return string if successful, @c NULL otherwise.
+ */
 has_t * has_string_init(has_t *string, char *pointer, size_t size, bool owner);
+
+/**
+ * @brief Initializes a string has_t element with string and
+ * ownership.
+ * @param [in] string  Pointer to has_t element to initialize.
+ * @param [in] pointer Pointer to <tt>NULL</tt>-terminated string.
+ * @param [in] owner   Boolean value specifying the ownership of the
+ * string.
+ * @return string if successful, @c NULL otherwise.
+ */
 has_t * has_string_init_str(has_t *string, char *str, bool owner);
 
 /**
  * @brief Tests if a has_t element is a string.
+ * @param [in] string  Pointer to has_t element to test.
  */
 bool has_is_string(has_t *e);
 
@@ -511,6 +600,8 @@ has_t * has_double_init(has_t *fp, double value);
  * @brief Tests if a has_t element is a double.
  */
 bool has_is_double(has_t *e);
+
+/* FIXME */
 double has_double_get(has_t *fp);
 
 /**
@@ -523,6 +614,9 @@ has_t * has_pointer_new(void *value);
  */
 has_t * has_pointer_init(has_t *pointer, void *value);
 
+/**
+ * @brief Tests if a has_t element is a pointer.
+ */
 bool has_is_pointer(has_t *e);
 
 uint32_t has_hash_function(const char * data, int len);
