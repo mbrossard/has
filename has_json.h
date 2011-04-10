@@ -30,11 +30,15 @@ has_t *has_json_parse(const char *buffer, bool decode);
  * @param input  has_t structure to serialize
  * @param output Pointer to serialization buffer
  * @param size   Pointer to size
- * @param encode Encoding options
+ * @param flags  Serialization options
  * @return 0 if success, -1 in case of failure.
  *
  */
-int has_json_serialize(has_t *input, char **output, size_t *size, int encode);
+
+#define HAS_JSON_SERIALIZE_ENCODE  (1 << 0)
+#define HAS_JSON_SERIALIZE_PRETTY  (1 << 1)
+
+int has_json_serialize(has_t *input, char **output, size_t *size, int flags);
 
 #ifdef __cplusplus
 };

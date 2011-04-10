@@ -205,48 +205,42 @@ int has_json_string_decode(char *input, size_t length,
         if(i == length) {
             j = length - processed;
         } else {
-            j = i - processed - 1;
+            j = i - processed;
         }
+
         memcpy(n + written, input + processed, j);
         processed += j;
         written += j;
         if(processed < length && input[processed] == '\\') {
-            char *add = NULL, c = input[processed + 1];
-            if(c == '"') add = "\"";
-            else if(c == '\\') add = "\\";
-            else if(c == 'b') add = "\b";
-            else if(c == 'f') add = "\f";
-            else if(c == 'n') add = "\n";
-            else if(c == 'r') add = "\r";
-            else if(c == 't') add = "\t";
-            else if(c == 'u') {
+            char c = input[processed + 1];
+            if(c == 'u') {
                 int32_t point = 0;
                 processed += 2;
                 if((j = has_json_decode_unicode
-                    (input + processed, length - processed, &point)) - 1) {
-                    /* FIXME: Fail */
-                } else {
-                    processed += j;
+                    (input + processed, length - processed, &point)) == - 1) {
+                    return -1;
                 }
-
+                processed += j;
                 if((j = encode_utf8(point, n + written)) == -1) {
-                    /* FIXME: Fail */
-                } else {
-                    written += j;
+                    return -1;
                 }
+                written += j;
             } else {
-                /* FIXME: Fail */
-            }
-            if(add) {
+                if(c == '"') c = '\"';
+                else if(c == '\\') c = '\\';
+                else if(c == 'b') c = '\b';
+                else if(c == 'f') c = '\f';
+                else if(c == 'n') c = '\n';
+                else if(c == 'r') c = '\r';
+                else if(c == 't') c = '\t';
+                else return -1;
                 processed += 2;
-                n[written++] = add[0];
+                n[written++] = c;
             }
         }
     }
-
     *output = n;
     *newlen = written;
-
     return 0;
 }
 
@@ -403,7 +397,8 @@ typedef int (*has_json_outputter) (has_json_serializer_t *s,
 struct has_json_serializer_t {
     has_json_outputter outputter;
     void *pointer;
-    bool encode;
+    int flags;
+    int indent;
 };
 
 typedef struct {
@@ -451,7 +446,7 @@ int has_json_string_encode(has_json_serializer_t *s,
             add = "\"";
         } else if(c == '\\') {
             add = "\\\\";
-        } else if(s->encode) {
+        } else if(s->flags & HAS_JSON_SERIALIZE_ENCODE) {
             if(c == '\b') add = "\\b";
             else if(c == '\f') add = "\\f";
             else if(c == '\n') add = "\\n";
@@ -472,13 +467,17 @@ int has_json_string_encode(has_json_serializer_t *s,
             }
         }
         if(add) {
-            if((s->outputter(s->pointer, input + start, stop - start)) < 0 ||
-               (s->outputter(s->pointer, add, l)) < 0) {
+            if((stop - start) > 0) {
+                if((s->outputter(s->pointer, input + start, stop - start)) < 0) {
+                    return -1;
+                }
+            }
+            if((s->outputter(s->pointer, add, l)) < 0) {
                 return -1;
             }
             start = stop + m;
         }
-        stop++;
+        stop += m;
     }
 
     if((start < stop) &&
@@ -496,7 +495,7 @@ int has_json_serialize_string(has_json_serializer_t *s,
         return -1;
     }
 
-    if(s->encode) {
+    if(s->flags & HAS_JSON_SERIALIZE_ENCODE) {
         return (((s->outputter)(s->pointer, "\"", 1) == 0) &&
                 (has_json_string_encode(s, value, size) == 0) &&
                 ((s->outputter)(s->pointer, "\"", 1) == 0)) ? 0 : -1;
@@ -506,6 +505,20 @@ int has_json_serialize_string(has_json_serializer_t *s,
                 ((s->outputter)(s->pointer, "\"", 1) == 0)) ? 0 : -1;
     }
 }
+
+
+#define INDENT(s) \
+    if(s->flags & HAS_JSON_SERIALIZE_PRETTY) { \
+        int i; \
+        for(i = 0; i < s->indent ; i++) { \
+            (s->outputter)(s->pointer, "  ", 2); \
+        } \
+    }
+#define PRETTY(s, c, a)  \
+    if(s->flags & HAS_JSON_SERIALIZE_PRETTY) { \
+        (s->outputter)(s->pointer, c, 1); \
+        s->indent += a; \
+    }
 
 int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
                                const char *string, size_t size, has_t *element,
@@ -518,25 +531,38 @@ int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
     }
 
     if(cur == NULL) {
+        INDENT(s);
         r = (s->outputter)(s->pointer, "null", 4);
     } else if(type == has_walk_hash_begin) {
         r = (s->outputter)(s->pointer, "{", 1);
+        PRETTY(s, "\n", 1);
     } else if(type == has_walk_hash_key) {
+        INDENT(s);
         r = ((has_json_serialize_string(s, string, size) == 0) &&
              ((s->outputter)(s->pointer, ":", 1) == 0)) ? 0 : -1;
+        PRETTY(s, " ", 0);
     } else if(type == has_walk_hash_value_end) {
         if(index < cur->value.hash.count - 1) {
             r = (s->outputter)(s->pointer, ",", 1);
+            PRETTY(s, "\n", 0);
         }
     } else if(type == has_walk_hash_end) {
+        PRETTY(s, "\n", -1);
+        INDENT(s);
         r = (s->outputter)(s->pointer, "}", 1);
     } else if(type == has_walk_array_begin) {
         r = (s->outputter)(s->pointer, "[", 1);
+        PRETTY(s, "\n", 1);
+    } else if(type == has_walk_array_entry_begin) {
+        INDENT(s);
     } else if(type == has_walk_array_entry_end) {
-        if(index != cur->value.hash.count - 1) {
+        if(index < cur->value.array.count - 1) {
             r = (s->outputter)(s->pointer, ",", 1);
+            PRETTY(s, "\n", 0);
         }
     } else if(type == has_walk_array_end) {
+        PRETTY(s, "\n", -1);
+        INDENT(s);
         r = (s->outputter)(s->pointer, "]", 1);
     } else if(type == has_walk_string) {
         r = has_json_serialize_string(s, string, size);
@@ -560,7 +586,7 @@ int has_json_serializer_walker(has_t *cur, has_walk_t type, int index,
     return r;
 }
 
-int has_json_serialize(has_t *input, char **output, size_t *size, int encode)
+int has_json_serialize(has_t *input, char **output, size_t *size, int flags)
 {
     has_json_serializer_buffer_t sb;
     has_json_serializer_t s;
@@ -578,10 +604,12 @@ int has_json_serialize(has_t *input, char **output, size_t *size, int encode)
             return -1;
         }
         sb.size = 4096;
+        sb.owner = 1;
     }
     sb.current = 0;
 
-    s.encode = (encode) ? true : false;
+    s.flags = flags;
+    s.indent = 0;
     s.outputter = (has_json_outputter)has_json_serializer_buffer_outputter;
     s.pointer = &sb;
 
