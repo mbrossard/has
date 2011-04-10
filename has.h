@@ -196,9 +196,11 @@ has_t * has_hash_init(has_t *hash, size_t size);
 
 /**
  * @brief Tests if a has_t structure is a hash.
- * @param [in] hash Pointer to hash has_t element to test
+ * @param [in] hash Pointer to hash has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a hash,
+ * @c false otherwise.
  */
-bool has_is_hash(has_t *e);
+bool has_is_hash(has_t *hash);
 
 /**
  * @brief Retrieves the number of elements in a hash has_t structure.
@@ -303,18 +305,19 @@ has_t * has_hash_get(has_t *hash, const char *key, size_t size);
  * @brief Retrieves an entry from hash based on its key (passed as
  * string).
  * @param [in] hash  Pointer to hash has_t element to test.
- * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * @param [in] key   Pointer to <tt>NULL</tt>-terminated string
  * containing the key.
  * @return the value corresponding to the key, @c NULL if not found or
  * if hash is @c NULL or not a has_hash element.
  */
-has_t * has_hash_get_str(has_t *hash, const char *string);
+has_t * has_hash_get_str(has_t *hash, const char *key);
 
 /**
  * @brief Removes an entry from hash based on its key.
  * @param [in] hash  Pointer to hash has_t element to test.
- * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * @param [in] key   Pointer to <tt>NULL</tt>-terminated string
  * containing the key.
+ * @param [in] size  Size of the key.
  * @return the value corresponding to the key, @c NULL if not found or
  * if hash is @c NULL or not a has_hash element.
  */
@@ -323,15 +326,22 @@ has_t * has_hash_remove(has_t *hash, const char *key, size_t size);
 /**
  * @brief Removes an entry from hash based on its key (passed as
  * string).
- * @param [in] hash  Pointer to hash has_t element to test.
- * @param [in] string Pointer to <tt>NULL</tt>-terminated string
+ * @param [in] hash Pointer to hash has_t element to test.
+ * @param [in] key  Pointer to <tt>NULL</tt>-terminated string
  * containing the key.
  * @return the value corresponding to the key, @c NULL if not found or
  * if hash is @c NULL or not a has_hash element.
  */
-has_t * has_hash_remove_str(has_t *hash, const char *string);
+has_t * has_hash_remove_str(has_t *hash, const char *key);
 
 /**
+ * @brief Deletes an entry from hash based on its key.
+ * @param [in] hash Pointer to hash has_t element to test.
+ * @param [in] key  Pointer to <tt>NULL</tt>-terminated string
+ * containing the key.
+ * @param [in] size  Size of the key.
+ * @return @c true if found and @c false if not found or
+ * if hash is @c NULL or not a has_hash element.
  */
 bool has_hash_delete(has_t *hash, const char *key, size_t size);
 
@@ -394,8 +404,10 @@ has_t * has_array_init(has_t *array, size_t size);
 /**
  * @brief Tests if a has_t element is an array.
  * @param [in] array  Pointer to array has_t
+ * @return @c true if pointer is not null and has_t element is an
+ * array, @c false otherwise.
  */
-bool has_is_array(has_t *e);
+bool has_is_array(has_t *array);
 
 /**
  * @brief Retrieves the number of elements in an array has_t
@@ -419,7 +431,7 @@ has_t * has_array_push(has_t *array, has_t *value);
  * @return Pointer to has_t element retrieved if successful, @c NULL
  * otherwise.
  */
-has_t * has_array_pop(has_t *a);
+has_t * has_array_pop(has_t *array);
 
 /**
  * @brief Adds an element at the start of a has_t array.
@@ -436,7 +448,7 @@ has_t * has_array_unshift(has_t *array, has_t *value);
  * @return Pointer to has_t element retrieved if successful, @c NULL
  * otherwise.
  */
-has_t * has_array_shift(has_t *a);
+has_t * has_array_shift(has_t *array);
 
 /**
  * @brief Sets an element at given postion of a has_t array.
@@ -472,7 +484,7 @@ has_t * has_array_get(has_t *array, size_t index);
  * @return Pointer to string has_t element if successful, @c NULL
  * otherwise.
  */
-has_t * has_string_new(char *pointer, size_t size);
+has_t * has_string_new(char *string, size_t size);
 
 /**
  * @brief Allocates and initializes a string has_t element with
@@ -484,7 +496,7 @@ has_t * has_string_new(char *pointer, size_t size);
  * @return Pointer to string has_t element if successful, @c NULL
  * otherwise.
  */
-has_t * has_string_new_o(char *pointer, size_t size, bool owner);
+has_t * has_string_new_o(char *string, size_t size, bool owner);
 
 /**
  * @brief Allocates and initializes a string has_t element with
@@ -525,13 +537,15 @@ has_t * has_string_init(has_t *string, char *pointer, size_t size, bool owner);
  * string.
  * @return string if successful, @c NULL otherwise.
  */
-has_t * has_string_init_str(has_t *string, char *str, bool owner);
+has_t * has_string_init_str(has_t *string, char *pointer, bool owner);
 
 /**
  * @brief Tests if a has_t element is a string.
  * @param [in] string  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a
+ * string, @c false otherwise.
  */
-bool has_is_string(has_t *e);
+bool has_is_string(has_t *string);
 
 /** @} */
 
@@ -547,6 +561,9 @@ has_t * has_null_init(has_t *null);
 
 /**
  * @brief Tests if a has_t element is a null.
+ * @param [in] e  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a
+ * a null, @c false otherwise.
  */
 bool has_is_null(has_t *e);
 
@@ -562,6 +579,9 @@ has_t * has_int_init(has_t *integer, int32_t value);
 
 /**
  * @brief Tests if a has_t element is an integer.
+ * @param [in] e  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is an
+ * integer, @c false otherwise.
  */
 bool has_is_int(has_t *e);
 
@@ -580,6 +600,9 @@ has_t * has_bool_init(has_t *boolean, bool value);
 
 /**
  * @brief Tests if a has_t element is a boolean.
+ * @param [in] e  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a
+ * boolean, @c false otherwise.
  */
 bool has_is_boolean(has_t *e);
 
@@ -598,6 +621,9 @@ has_t * has_double_init(has_t *fp, double value);
 
 /**
  * @brief Tests if a has_t element is a double.
+ * @param [in] e  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a
+ * double, @c false otherwise.
  */
 bool has_is_double(has_t *e);
 
@@ -616,6 +642,9 @@ has_t * has_pointer_init(has_t *pointer, void *value);
 
 /**
  * @brief Tests if a has_t element is a pointer.
+ * @param [in] e  Pointer to has_t element to test.
+ * @return @c true if pointer is not null and has_t element is a
+ * pointer, @c false otherwise.
  */
 bool has_is_pointer(has_t *e);
 
