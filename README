@@ -1,4 +1,0 @@
-has (hash, array, scalar) is intended to be a C library for people
-used to dynamic languages.
-
-Currently it's in an unfinished, undocumented and buggy state. Don't use it.
