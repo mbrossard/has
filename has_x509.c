@@ -1,7 +1,8 @@
 #include <has.h>
 
-#include <openssl/bio.h>
 #include <openssl/asn1.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
@@ -69,6 +70,46 @@ char *asn1string(ASN1_STRING *val)
     return str;
 }
 
+char *pkey_dump(EVP_PKEY *pkey)
+{
+    char *str, *t;
+    int l;
+    BIO  *buf = BIO_new(BIO_s_mem());
+#if OPENSSL_VERSION_NUMBER > 0x10000000L
+    EVP_PKEY_print_public(buf, pkey, 0, NULL);
+#else
+    switch(pkey->type) { 
+#ifndef OPENSSL_NO_RSA
+        case EVP_PKEY_RSA:
+            BIO_printf(buf,"%12sRSA Public Key: (%d bit)\n","",
+                       BN_num_bits(pkey->pkey.rsa->n));
+            RSA_print(buf,pkey->pkey.rsa,16);
+            break;
+#endif
+#ifndef OPENSSL_NO_DSA
+        case EVP_PKEY_DSA:
+			BIO_printf(buf,"%12sDSA Public Key:\n","");
+			DSA_print(buf,pkey->pkey.dsa,16);
+            break;
+#endif
+#ifndef OPENSSL_NO_EC
+		case EVP_PKEY_EC:
+			BIO_printf(buf, "%12sEC Public Key: \n","");
+			EC_KEY_print(buf, pkey->pkey.ec, 16);
+            break;
+#endif
+        default:
+        BIO_printf(buf,"Unknown Public Key");
+    }
+#endif
+    l = BIO_get_mem_data(buf, &t);
+    str = calloc(l + 1, 1);
+    memcpy(str, t, l);
+    BIO_free(buf);
+    return str;
+}
+
+
 char *ext_dump(X509_EXTENSION *ex)
 {
     char *str, *t;
@@ -81,7 +122,6 @@ char *ext_dump(X509_EXTENSION *ex)
     BIO_free(buf);
     return str;
 }
-
 
 has_t *dn2hash(X509_NAME *dn)
 {
@@ -141,6 +181,39 @@ has_t *has_x509_extensions(STACK_OF(X509_EXTENSION) *exts)
     return r;
 }
 
+has_t *has_x509_attributes(STACK_OF(X509_ATTRIBUTE) *exts)
+{
+    has_t *r = has_hash_new(16);
+    int i, j = sk_X509_ATTRIBUTE_num(exts);
+
+    for(i = 0; i < j; i++) {
+        has_t *cur = has_hash_new(4);
+		X509_ATTRIBUTE *ex = sk_X509_ATTRIBUTE_value(exts, i);
+        ASN1_OBJECT *obj = ex->object;
+        has_t *content;
+
+        if(ex->single) {
+            content = has_string_new((char *)
+                                     ex->value.single->value.bit_string->data,
+                                     ex->value.single->value.bit_string->length);
+        } else {
+            int k, l;
+            content = has_array_new(4);
+            l = sk_ASN1_TYPE_num(ex->value.set);
+            for(k = 0 ; k < l ; k++) {
+                ASN1_TYPE *a = sk_ASN1_TYPE_value(ex->value.set, k);
+                has_array_push(content, has_string_new((char *)
+                                                       a->value.asn1_string->data,
+                                                       a->value.asn1_string->length));
+            }
+        }
+
+        has_hash_set_str(cur, "content", content);
+        has_hash_set_str_o(r, oid2string(obj), cur, 1);
+    }
+    return r;
+}
+
 has_t *has_x509_new(X509 *x509)
 {
     has_t     *crt  = NULL;
@@ -163,7 +236,19 @@ has_t *has_x509_new(X509 *x509)
         r = has_hash_set_str(crt, "serial", has_string_new_str_o(serial, 1));
     }
 
+    /* Public key */
     ci = x509->cert_info;
+    if(r) {
+        char *keyalg;
+        i = OBJ_obj2txt(NULL, 0, ci->key->algor->algorithm, 0);
+        keyalg =  malloc(i + 2);
+        j = OBJ_obj2txt(keyalg, i + 1, ci->key->algor->algorithm, 0);
+        r = has_hash_set_str(crt, "key_alg", has_string_new_str_o(keyalg, 1));
+        r = has_hash_set_str(crt, "pubkey", has_string_new_str_o
+                             (pkey_dump(X509_get_pubkey(x509)), 1));
+    }
+
+    /* Signature */
     if(r) {
         char *sigalg;
         i = OBJ_obj2txt(NULL, 0, ci->signature->algorithm, 0);
@@ -206,4 +291,61 @@ has_t *has_x509_new(X509 *x509)
     }
 
     return crt;
+}
+
+has_t *has_pkcs10_new(X509_REQ *pkcs10)
+{
+    has_t         *p10  = NULL;
+    has_t         *r    = NULL;
+    X509_REQ_INFO *ri   = NULL;
+    size_t         l;
+    int            i, j;
+
+    p10 = has_hash_new(32);
+    ri = pkcs10->req_info;
+
+    /* Version */
+    l = X509_REQ_get_version(pkcs10);
+    r = has_hash_set_str(p10, "version", has_int_new(l));
+
+    /* Public key */
+    if(r) {
+        char *keyalg;
+        i = OBJ_obj2txt(NULL, 0, ri->pubkey->algor->algorithm, 0);
+        keyalg =  malloc(i + 2);
+        j = OBJ_obj2txt(keyalg, i + 1, ri->pubkey->algor->algorithm, 0);
+        r = has_hash_set_str(p10, "key_alg", has_string_new_str_o(keyalg, 1));
+        r = has_hash_set_str(p10, "pubkey", has_string_new_str_o
+                             (pkey_dump(X509_REQ_get_pubkey(pkcs10)), 1));
+    }
+
+    /* Signature */
+    if(r) {
+        char *sigalg;
+        i = OBJ_obj2txt(NULL, 0, pkcs10->sig_alg->algorithm, 0);
+        sigalg =  malloc(i + 2);
+        j = OBJ_obj2txt(sigalg, i + 1, pkcs10->sig_alg->algorithm, 0);
+        r = has_hash_set_str(p10, "sig_alg", has_string_new_str_o(sigalg, 1));
+    }
+
+    if(r) {
+        has_t *subject = has_hash_new(2);
+        X509_NAME *d = X509_REQ_get_subject_name(pkcs10);
+        char *dn = dn2string(d);
+        has_hash_set_str(subject, "string", has_string_new_str_o(dn, 1));
+        has_hash_set_str(subject, "struct", dn2hash(d));
+        r = has_hash_set_str(p10, "subject", subject);
+    }
+
+    if(r) {
+        has_t *attributes = has_x509_attributes(ri->attributes);
+        r = has_hash_set_str(p10, "attributes", attributes);
+    }
+
+    if(r) {
+        has_t *extensions = has_x509_extensions(X509_REQ_get_extensions(pkcs10));
+        r = has_hash_set_str(p10, "extensions", extensions);
+    }
+
+    return p10;
 }
