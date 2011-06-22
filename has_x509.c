@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <has.h>
 
 #include <openssl/asn1.h>
@@ -119,6 +120,8 @@ char *ext_dump(X509_EXTENSION *ex)
     l = BIO_get_mem_data(buf, &t);
     str = calloc(l + 1, 1);
     memcpy(str, t, l);
+    while(l && isspace(*(str + l - 1)))   l--;
+    *(str + l) = '\0';
     BIO_free(buf);
     return str;
 }
