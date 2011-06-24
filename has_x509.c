@@ -118,10 +118,9 @@ char *ext_dump(X509_EXTENSION *ex)
     BIO  *buf = BIO_new(BIO_s_mem());
     X509V3_EXT_print(buf, ex, 0, 0);
     l = BIO_get_mem_data(buf, &t);
+    while(l > 0 && isspace(t[l - 1])) l--;
     str = calloc(l + 1, 1);
     memcpy(str, t, l);
-    while(l && isspace(*(str + l - 1)))   l--;
-    *(str + l) = '\0';
     BIO_free(buf);
     return str;
 }
@@ -248,10 +247,11 @@ has_t *has_x509_new(X509 *x509)
         keyalg =  malloc(i + 2);
         j = OBJ_obj2txt(keyalg, i + 1, ci->key->algor->algorithm, 0);
         r = has_hash_set_str(crt, "key_alg", has_string_new_str_o(keyalg, 1));
-        pkey = X509_get_pubkey(x509);
-        r = has_hash_set_str(crt, "pubkey", has_string_new_str_o(pkey_dump(pkey), 1));
-        if (pkey)
+        if((pkey = X509_get_pubkey(x509))) {
+            r = has_hash_set_str(crt, "pubkey", has_string_new_str_o
+                                 (pkey_dump(pkey), 1));
             EVP_PKEY_free(pkey);
+        }
     }
 
     /* Signature */
