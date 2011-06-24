@@ -243,12 +243,15 @@ has_t *has_x509_new(X509 *x509)
     ci = x509->cert_info;
     if(r) {
         char *keyalg;
+        EVP_PKEY *pkey = NULL;
         i = OBJ_obj2txt(NULL, 0, ci->key->algor->algorithm, 0);
         keyalg =  malloc(i + 2);
         j = OBJ_obj2txt(keyalg, i + 1, ci->key->algor->algorithm, 0);
         r = has_hash_set_str(crt, "key_alg", has_string_new_str_o(keyalg, 1));
-        r = has_hash_set_str(crt, "pubkey", has_string_new_str_o
-                             (pkey_dump(X509_get_pubkey(x509)), 1));
+        pkey = X509_get_pubkey(x509);
+        r = has_hash_set_str(crt, "pubkey", has_string_new_str_o(pkey_dump(pkey), 1));
+        if (pkey)
+            EVP_PKEY_free(pkey);
     }
 
     /* Signature */
