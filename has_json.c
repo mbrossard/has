@@ -443,7 +443,7 @@ int has_json_string_encode(has_json_serializer_t *s,
         int l = 2, m = 1;
 
         if(c == '"') {
-            add = "\"";
+            add = "\\\"";
         } else if(c == '\\') {
             add = "\\\\";
         } else if(s->flags & HAS_JSON_SERIALIZE_ENCODE) {
