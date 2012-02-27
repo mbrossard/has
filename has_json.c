@@ -377,9 +377,10 @@ has_t *has_json_parse(const char *buffer, bool decode)
     if((tokens = malloc(max_tokens * sizeof(jsmntok_t))) == NULL) {
         return NULL;
     }
-    jsmn_init_parser(&parser, buffer, tokens, max_tokens);
 
-    if(jsmn_parse(&parser) != 0) {
+    jsmn_init(&parser);
+
+    if(jsmn_parse(&parser, buffer, tokens, max_tokens) != 0) {
         free(tokens);
         return NULL;
     }

@@ -16,9 +16,13 @@ typedef enum {
 } jsmntype_t;
 
 typedef enum {
+	/* Not enough tokens were provided */
 	JSMN_ERROR_NOMEM = -1,
+	/* Invalid character inside JSON string */
 	JSMN_ERROR_INVAL = -2,
+	/* The string is not a full JSON packet, more bytes expected */
 	JSMN_ERROR_PART = -3,
+	/* Everything was fine */
 	JSMN_SUCCESS = 0
 } jsmnerr_t;
 
@@ -40,24 +44,21 @@ typedef struct {
  * the string being parsed now and current position in that string
  */
 typedef struct {
-	const char *js;
-	unsigned int pos;
-	unsigned int num_tokens;
-	int curtoken;
-	int *cursize;
-	jsmntok_t *tokens;
+	unsigned int pos; /* offset in the JSON string */
+	int toknext; /* next token to allocate */
+	int toksuper; /* suporior token node, e.g parent object or array */
 } jsmn_parser;
 
 /**
  * Create JSON parser over an array of tokens
  */
-void jsmn_init_parser(jsmn_parser *parser, const char *js, 
-                      jsmntok_t *tokens, unsigned int num_tokens);
+void jsmn_init(jsmn_parser *parser);
 
 /**
  * Run JSON parser. It parses a JSON data string into and array of tokens, each describing
  * a single JSON object.
  */
-jsmnerr_t jsmn_parse(jsmn_parser *parser);
+jsmnerr_t jsmn_parse(jsmn_parser *parser, const char *js, 
+		jsmntok_t *tokens, unsigned int num_tokens);
 
 #endif /* __JSMN_H_ */
