@@ -20,11 +20,9 @@ int main(int argc, char **argv)
 {
     int i, j = 1024 * 1024 * 1;
     char *buffer = malloc(8 * j + 4);
-#ifndef BENCH
     has_t* h = has_hash_new(64);
+#ifndef BENCH
     has_t* vals = has_new(j);
-#else
-    has_t* h = has_hash_new(j);
 #endif
     double t1, t2;
 

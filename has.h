@@ -80,8 +80,11 @@ typedef struct has_t has_t;
  * @brief String Structure
  */
 typedef struct {
+    /** Pointer to string content */
     char     *pointer;
+    /** Size of string */
     size_t    size;
+    /** Flag specifying is pointer should be freed */
     bool      owner;
 } has_string_t;
 
@@ -90,8 +93,11 @@ typedef struct {
  * @brief Array Structure
  */
 typedef struct {
+    /** Array of pointers to elements */
     has_t     **elements;
+    /** Number of allocated slots for elements */
     size_t      size;
+    /** Number of elements present  */
     size_t      count;
 } has_array_t;
 
@@ -100,8 +106,11 @@ typedef struct {
  * @brief Associative Array Sub-structure
  */
 typedef struct  {
+    /** Digest of key */
     uint32_t      hash;
-    has_t        *value;    
+    /** Pointer to hash entry value */
+    has_t        *value;
+    /** Hash entry key */
     has_string_t  key;
 } has_hash_entry_t;
 
@@ -110,27 +119,47 @@ typedef struct  {
  * @brief Associative Array Structure
  */
 typedef struct {
+    /** Array of hash entries */
     has_hash_entry_t  *entries;
+    /** Open-addressing array of entries pointers */
     has_hash_entry_t **hash;
+    /** Number of allocated slots for entries */
     size_t             size;
+    /** Number of entries present */
     size_t             count;
 } has_hash_t;
 
+/**
+ * @struct has_value_t
+ * @brief has_t value Union
+ */
+typedef union {
+    /** Array */
+    has_array_t array;
+    /** Associative Array */
+    has_hash_t hash;
+    /** String */
+    has_string_t string;
+    /** Unsigned Integer */
+    uint32_t uint;
+    /** Signed Integer */
+    int32_t integer;
+    /** Floating Pointer */
+    double fp;
+    /** Boolean */
+    bool boolean;
+    /** Pointer */
+    void *pointer;
+} has_value_t;
+
 struct has_t {
-    union {
-        has_array_t array;
-        has_hash_t hash;
-        has_string_t string;
-        uint32_t uint;
-        int32_t integer;
-        double fp;
-        bool boolean;
-        void *pointer;
-    } value;
+    /** Value of has_t element */
+    has_value_t value;
+    /** Type of has_t element @see has_types */
     unsigned char type;
+    /** Flag specifying if has_t element can be deallocated */
     bool owner;
 };
-
 
 /**
  * @typedef has_walk_function_t
