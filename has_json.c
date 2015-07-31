@@ -338,7 +338,7 @@ static has_t *has_json_build(jsmntok_t *tokens, size_t cur, size_t max,
         case JSMN_OBJECT:
             r = has_hash_new(tokens[cur].size);
             count++;
-            for(i = 0; i < tokens[cur].size && error == 0; i+= 2) {
+            for(i = 0; i < tokens[cur].size && error == 0; i++) {
                 has_t *k = has_json_build(tokens, cur + count, max,
                                           buffer, &count, decode);
                 if(k) {
