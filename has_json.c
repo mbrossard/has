@@ -380,7 +380,7 @@ has_t *has_json_parse(const char *buffer, bool decode)
 
     jsmn_init(&parser);
 
-    if(jsmn_parse(&parser, buffer, tokens, max_tokens) != 0) {
+    if(jsmn_parse(&parser, buffer, size, tokens, max_tokens) < 0) {
         free(tokens);
         return NULL;
     }
