@@ -55,6 +55,7 @@ int main(int argc, char **argv)
     /* Format DER */
     if((pkcs10 = d2i_X509_REQ_bio(bio, NULL)) == NULL) {
         ERR_clear_error();
+        BIO_reset(bio);
         /* Format PEM */
         pkcs10 = PEM_read_bio_X509_REQ(bio, NULL, NULL, NULL);
     }
