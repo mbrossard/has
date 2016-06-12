@@ -1,6 +1,8 @@
 has
 ===
 
+[![Build Status](https://travis-ci.org/mbrossard/has.svg?branch=master)](https://travis-ci.org/mbrossard/has)
+
 has (hash, array, scalar) is a C library for people used to dynamic
 languages.
 
