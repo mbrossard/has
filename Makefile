@@ -11,8 +11,9 @@ test: $(TESTS)
 	./tests/test_has
 	./tests/test_json
 	./tests/test_utf8
-	./tests/test_x509
-	./tests/test_pkcs10
+	openssl genrsa 1024 -nodes > key.pem
+	openssl req -new -key key.pem -out pkcs10.pem -subj /CN=Foo -sha256
+	./tests/test_pkcs10 pkcs10.pem
 
 tests/test_has: tests/test_has.c has.c has.h
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
