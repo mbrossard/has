@@ -1,0 +1,14 @@
+language: c
+sudo: false
+
+branches:
+  only:
+    - master
+
+matrix:
+  include:
+  - os: linux
+    compiler: gcc
+
+script:
+  - make
