@@ -1,3 +1,10 @@
+/*
+ * Copyright 2016 Mathias Brossard <mathias@brossard.org>
+ */
+/**
+ * @file has_x509.c
+ */
+
 #include <ctype.h>
 #include <has.h>
 
@@ -150,7 +157,6 @@ static has_t *pkey_dump(EVP_PKEY *pkey, has_t *crt)
     BIO_free(buf);
     return crt;
 }
-
 
 char *ext_dump(X509_EXTENSION *ex)
 {

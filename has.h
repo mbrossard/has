@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Mathias Brossard <mathias@brossard.org>
+ * Copyright 2016 Mathias Brossard <mathias@brossard.org>
  */
 /**
  * @file has.h
