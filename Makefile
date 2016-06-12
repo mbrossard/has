@@ -7,6 +7,13 @@ TESTS = tests/test_has tests/test_json tests/test_utf8 \
 
 all: $(TESTS)
 
+test: $(TESTS)
+	./tests/test_has
+	./tests/test_json
+	./tests/test_utf8
+	./tests/test_x509
+	./tests/test_pkcs10
+
 tests/test_has: tests/test_has.c has.c has.h
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
