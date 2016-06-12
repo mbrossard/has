@@ -12,3 +12,4 @@ matrix:
 
 script:
   - make
+  - make test
